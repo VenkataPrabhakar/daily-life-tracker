@@ -3,6 +3,8 @@ import type {
   Achievement,
   AppConfig,
   Bill,
+  Asset,
+  NetWorthSnapshot,
   CalendarEvent,
   DailyGoals,
   DailyLog,
@@ -45,6 +47,8 @@ export class LifeOSDatabase extends Dexie {
   debtPayments!: Table<DebtPayment, string>;
   investments!: Table<Investment, string>;
   bills!: Table<Bill, string>;
+  assets!: Table<Asset, string>;
+  netWorthSnapshots!: Table<NetWorthSnapshot, string>;
   tasks!: Table<Task, string>;
   notifications!: Table<Notification, string>;
   achievements!: Table<Achievement, string>;
@@ -84,6 +88,10 @@ export class LifeOSDatabase extends Dexie {
       documents: 'id, categoryId, createdAt',
       calendarEvents: 'id, date, type',
     });
+    this.version(3).stores({
+      assets: 'id, typeId',
+      netWorthSnapshots: 'id, date',
+    });
   }
 }
 
@@ -93,7 +101,7 @@ export async function initDatabase(): Promise<AppConfig> {
   const existing = await db.appConfig.get('default');
   if (existing) {
     const migrated = migrateConfig(existing);
-    if (migrated.version !== existing.version || !existing.lifeModes) {
+    if (migrated.version !== existing.version || !existing.lifeModes || !existing.financeTags?.length) {
       await db.appConfig.put(migrated);
     }
     return migrated;
@@ -125,7 +133,7 @@ export async function exportLifeOSData() {
   const [
     config, logs, goals, healthEntries, habits, habitLogs, goalItems,
     journalEntries, transactions, budgets, savingsFunds, savingsContributions,
-    debts, debtPayments, investments, bills, tasks, notifications, achievements,
+    debts, debtPayments, investments, bills, assets, netWorthSnapshots, tasks, notifications, achievements,
     relationships, interactions, homeItems, documents, calendarEvents,
   ] = await Promise.all([
     getAppConfig(),
@@ -144,6 +152,8 @@ export async function exportLifeOSData() {
     db.debtPayments.toArray(),
     db.investments.toArray(),
     db.bills.toArray(),
+    db.assets.toArray(),
+    db.netWorthSnapshots.toArray(),
     db.tasks.toArray(),
     db.notifications.toArray(),
     db.achievements.toArray(),
@@ -159,7 +169,7 @@ export async function exportLifeOSData() {
     config,
     logs, goals, healthEntries, habits, habitLogs, goalItems,
     journalEntries, transactions, budgets, savingsFunds, savingsContributions,
-    debts, debtPayments, investments, bills, tasks, notifications, achievements,
+    debts, debtPayments, investments, bills, assets, netWorthSnapshots, tasks, notifications, achievements,
     relationships, interactions, homeItems, documents, calendarEvents,
   };
 }
@@ -183,6 +193,8 @@ export async function importLifeOSData(data: Record<string, unknown>): Promise<v
       [db.debtPayments, data.debtPayments as unknown[]],
       [db.investments, data.investments as unknown[]],
       [db.bills, data.bills as unknown[]],
+      [db.assets, data.assets as unknown[]],
+      [db.netWorthSnapshots, data.netWorthSnapshots as unknown[]],
       [db.tasks, data.tasks as unknown[]],
       [db.notifications, data.notifications as unknown[]],
       [db.achievements, data.achievements as unknown[]],

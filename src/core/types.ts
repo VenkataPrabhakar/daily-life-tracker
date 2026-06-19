@@ -142,6 +142,14 @@ export type JournalEntry = {
 };
 
 export type TransactionType = 'income' | 'expense';
+export type IncomeFrequency = 'one-time' | 'weekly' | 'biweekly' | 'monthly' | 'yearly';
+export type BudgetMode = 'custom' | '503020' | 'zero-based';
+
+export type FinanceTag = {
+  id: string;
+  label: string;
+  color?: string;
+};
 
 export type Transaction = {
   id: string;
@@ -149,12 +157,16 @@ export type Transaction = {
   amount: number;
   date: string;
   categoryId: string;
+  subcategoryId?: string;
   sourceId?: string;
   paymentMethod?: string;
   notes?: string;
   tags?: string[];
   recurring: boolean;
   recurringRule?: string;
+  frequency?: IncomeFrequency;
+  taxable?: boolean;
+  attachmentUrl?: string;
 };
 
 export type Budget = {
@@ -164,6 +176,7 @@ export type Budget = {
   year: number;
   month?: number;
   limit: number;
+  mode?: BudgetMode;
 };
 
 export type SavingsFund = {
@@ -172,6 +185,7 @@ export type SavingsFund = {
   targetAmount: number;
   currentAmount: number;
   targetDate?: string;
+  monthlyContribution?: number;
   icon?: string;
 };
 
@@ -192,6 +206,10 @@ export type Debt = {
   interestRate: number;
   minimumPayment: number;
   dueDay?: number;
+  statementDay?: number;
+  creditLimit?: number;
+  emi?: number;
+  remainingMonths?: number;
   lender?: string;
   notes?: string;
 };
@@ -222,6 +240,24 @@ export type Bill = {
   recurring: boolean;
   recurringRule?: string;
   status: 'paid' | 'pending' | 'overdue' | 'upcoming';
+  autopay?: boolean;
+  reminderDays?: number;
+};
+
+export type Asset = {
+  id: string;
+  name: string;
+  typeId: string;
+  value: number;
+  notes?: string;
+};
+
+export type NetWorthSnapshot = {
+  id: string;
+  date: string;
+  assets: number;
+  liabilities: number;
+  netWorth: number;
 };
 
 export type Task = {
@@ -270,6 +306,9 @@ export type AppConfig = {
   goalCategories: CategoryDefinition[];
   taskCategories: CategoryDefinition[];
   paymentMethods: { id: string; label: string }[];
+  financeTags: FinanceTag[];
+  assetTypes: CategoryDefinition[];
+  budgetMode: BudgetMode;
   dashboards: DashboardLayout[];
   debtStrategy: 'snowball' | 'avalanche' | 'custom';
   version: number;

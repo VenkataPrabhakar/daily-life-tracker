@@ -8,6 +8,12 @@ import type {
   WidgetDefinition,
 } from '../../core/types';
 import { createExtendedConfigFields } from './extensions';
+import {
+  buildExpenseCategories,
+  INCOME_SOURCES,
+  FINANCE_TAGS,
+  ASSET_TYPES,
+} from './financeCategories';
 
 export const MODULES: ModuleDefinition[] = [
   { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dashboard', group: 'core' },
@@ -19,12 +25,6 @@ export const MODULES: ModuleDefinition[] = [
   { id: 'calendar', label: 'Calendar', icon: '📅', path: '/calendar', group: 'core' },
   { id: 'timeline', label: 'Timeline', icon: '🕐', path: '/timeline', group: 'core' },
   { id: 'finance', label: 'Finance', icon: '💰', path: '/finance', group: 'finance' },
-  { id: 'income', label: 'Income', icon: '💵', path: '/income', group: 'finance' },
-  { id: 'expenses', label: 'Expenses', icon: '💸', path: '/expenses', group: 'finance' },
-  { id: 'debt', label: 'Debt Management', icon: '🏦', path: '/debt', group: 'finance' },
-  { id: 'savings', label: 'Savings', icon: '🐷', path: '/savings', group: 'finance' },
-  { id: 'investments', label: 'Investments', icon: '📈', path: '/investments', group: 'finance' },
-  { id: 'net-worth', label: 'Net Worth', icon: '💎', path: '/net-worth', group: 'finance' },
   { id: 'analytics', label: 'Analytics', icon: '📉', path: '/analytics', group: 'system' },
   { id: 'reports', label: 'Reports', icon: '📄', path: '/reports', group: 'system' },
   { id: 'achievements', label: 'Achievements', icon: '🏆', path: '/achievements', group: 'system' },
@@ -73,22 +73,11 @@ export const HEALTH_METRICS: FieldDefinition[] = [
   { id: 'stress', label: 'Stress', type: 'rating', min: 1, max: 5 },
 ];
 
-const expenseCats = [
-  'housing', 'rent', 'mortgage', 'utilities', 'groceries', 'restaurants',
-  'transportation', 'fuel', 'insurance', 'medical', 'gym', 'entertainment',
-  'travel', 'shopping', 'subscriptions', 'education', 'taxes', 'emergency',
-];
+const expenseCats = buildExpenseCategories();
 
-export const EXPENSE_CATEGORIES: CategoryDefinition[] = expenseCats.map((id) => ({
-  id,
-  label: id.charAt(0).toUpperCase() + id.slice(1).replace(/-/g, ' '),
-  module: 'expenses',
-}));
+export const EXPENSE_CATEGORIES: CategoryDefinition[] = expenseCats;
 
-export const INCOME_SOURCES: CategoryDefinition[] = [
-  'salary', 'bonus', 'freelancing', 'side-income', 'interest', 'dividends',
-  'rental', 'business', 'custom',
-].map((id) => ({ id, label: id.charAt(0).toUpperCase() + id.slice(1).replace(/-/g, ' '), module: 'income' }));
+export { INCOME_SOURCES } from './financeCategories';
 
 export const DEBT_TYPES: CategoryDefinition[] = [
   'credit-card', 'student-loan', 'car-loan', 'mortgage', 'personal-loan',
@@ -182,9 +171,12 @@ export function createDefaultConfig(): AppConfig {
       { id: 'credit', label: 'Credit Card' },
       { id: 'bank', label: 'Bank Transfer' },
     ],
+    financeTags: FINANCE_TAGS,
+    assetTypes: ASSET_TYPES,
+    budgetMode: 'custom',
     dashboards: [DEFAULT_DASHBOARD],
     debtStrategy: 'snowball',
-    version: 3,
+    version: 4,
     ...createExtendedConfigFields(),
   };
 }
