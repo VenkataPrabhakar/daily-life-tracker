@@ -151,27 +151,60 @@ export function BudgetModule() {
   const { config } = useAppConfig();
   const budgets = useLiveQuery(() => db.budgets.toArray(), []);
   const transactions = useLiveQuery(() => db.transactions.where('type').equals('expense').toArray(), []);
+  const [categoryId, setCategoryId] = useState('');
+  const [limit, setLimit] = useState('500');
+
+  const categories = config?.expenseCategories ?? [];
+  const activeCategory = categoryId || categories[0]?.id || '';
 
   const alerts = budgets?.map((b) => {
-    const spent = transactions?.filter((t) => t.categoryId === b.categoryId).reduce((a, t) => a + t.amount, 0) ?? 0;
+    const monthPrefix = `${b.year}-${String(b.month ?? 1).padStart(2, '0')}`;
+    const spent = transactions?.filter((t) => t.categoryId === b.categoryId && t.date.startsWith(monthPrefix)).reduce((a, t) => a + t.amount, 0) ?? 0;
     const pct = b.limit ? Math.round((spent / b.limit) * 100) : 0;
-    return { ...b, spent, pct, label: config?.expenseCategories.find((c) => c.id === b.categoryId)?.label ?? b.categoryId };
+    return { ...b, spent, pct, label: categories.find((c) => c.id === b.categoryId)?.label ?? b.categoryId };
   }) ?? [];
 
-  const addBudget = async (categoryId: string, limit: number) => {
+  const addBudget = async () => {
+    const parsed = parseFloat(limit);
+    if (!activeCategory || !parsed || parsed <= 0) return;
     const now = new Date();
-    await db.budgets.put({ id: crypto.randomUUID(), categoryId, period: 'month', year: now.getFullYear(), month: now.getMonth() + 1, limit });
+    await db.budgets.put({
+      id: crypto.randomUUID(),
+      categoryId: activeCategory,
+      period: 'month',
+      year: now.getFullYear(),
+      month: now.getMonth() + 1,
+      limit: parsed,
+    });
+    setLimit('500');
+  };
+
+  const removeBudget = async (id: string) => {
+    await db.budgets.delete(id);
   };
 
   return (
     <div className="space-y-3">
-      <button type="button" className="btn-primary" onClick={() => addBudget(config?.expenseCategories[0]?.id ?? 'groceries', 500)}>Add sample budget</button>
+      <div className="widget-card flex flex-wrap gap-2">
+        <select className="input w-auto text-sm" value={activeCategory} onChange={(e) => setCategoryId(e.target.value)}>
+          {categories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+        </select>
+        <input type="number" className="input w-28 text-sm" placeholder="Limit $" value={limit} onChange={(e) => setLimit(e.target.value)} min="1" />
+        <button type="button" className="btn-primary text-sm" onClick={addBudget}>Set budget</button>
+      </div>
+      {alerts.length === 0 && <p className="text-sm text-slate-400">No budgets yet — set one above</p>}
       {alerts.map((a) => (
         <div key={a.id} className={`widget-card ${a.pct >= 100 ? 'border-rose-500/50' : a.pct >= 80 ? 'border-amber-500/50' : ''}`}>
-          <div className="flex justify-between text-sm"><span>{a.label}</span><span>{a.pct}% · ${a.spent}/${a.limit}</span></div>
-          <div className="mt-2 h-2 rounded-full bg-slate-200 dark:bg-slate-700"><div className={`h-2 rounded-full ${a.pct >= 100 ? 'bg-rose-500' : a.pct >= 80 ? 'bg-amber-500' : 'bg-brand-500'}`} style={{ width: `${Math.min(100, a.pct)}%` }} /></div>
+          <div className="flex justify-between text-sm">
+            <span>{a.label}</span>
+            <span>{a.pct}% · ${a.spent.toFixed(0)}/${a.limit}</span>
+          </div>
+          <div className="mt-2 h-2 rounded-full bg-slate-200 dark:bg-slate-700">
+            <div className={`h-2 rounded-full ${a.pct >= 100 ? 'bg-rose-500' : a.pct >= 80 ? 'bg-amber-500' : 'bg-brand-500'}`} style={{ width: `${Math.min(100, a.pct)}%` }} />
+          </div>
           {a.pct >= 100 && <p className="mt-1 text-xs text-rose-500">Budget exceeded</p>}
           {a.pct >= 80 && a.pct < 100 && <p className="mt-1 text-xs text-amber-500">80% threshold reached</p>}
+          <button type="button" className="mt-2 text-xs text-slate-400 hover:text-rose-500" onClick={() => removeBudget(a.id)}>Remove</button>
         </div>
       ))}
     </div>

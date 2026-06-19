@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react';
+import { liveQuery } from 'dexie';
 
-export function useLiveQuery<T>(queryFn: () => Promise<T>, deps: unknown[]): T | undefined {
+/** Reactive Dexie query — re-runs when underlying tables change. */
+export function useLiveQuery<T>(queryFn: () => T | Promise<T>, deps: unknown[]): T | undefined {
   const [data, setData] = useState<T>();
+
   useEffect(() => {
-    let active = true;
-    queryFn().then((result) => { if (active) setData(result); });
-    return () => { active = false; };
+    const observable = liveQuery(queryFn);
+    const sub = observable.subscribe((result) => setData(result));
+    return () => sub.unsubscribe();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
+
   return data;
 }
