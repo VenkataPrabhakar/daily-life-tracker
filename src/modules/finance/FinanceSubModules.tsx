@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { db } from '../../db/lifeOsDatabase';
 import { useAppConfig } from '../../context/ConfigContext';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
 import type { Debt, SavingsFund } from '../../core/types';
+import { calculateDebtPayoff } from '../../platform/finance/debtCalculators';
 
 export function SavingsModule() {
   const funds = useLiveQuery(() => db.savingsFunds.toArray(), []);
@@ -47,6 +48,7 @@ export function DebtModule() {
   const { config, updateConfig } = useAppConfig();
   const debts = useLiveQuery(() => db.debts.toArray(), []);
   const [name, setName] = useState('');
+  const [extraPayment, setExtraPayment] = useState(0);
 
   const add = async () => {
     if (!name.trim()) return;
@@ -62,17 +64,37 @@ export function DebtModule() {
     await db.debtPayments.put({ id: crypto.randomUUID(), debtId: debt.id, amount, date: new Date().toISOString().slice(0, 10) });
   };
 
+  const strategy = config?.debtStrategy ?? 'snowball';
   const sorted = [...(debts ?? [])].sort((a, b) =>
-    config?.debtStrategy === 'avalanche' ? b.interestRate - a.interestRate : a.balance - b.balance,
+    strategy === 'avalanche' ? b.interestRate - a.interestRate : a.balance - b.balance,
+  );
+
+  const payoffPlan = useMemo(
+    () => calculateDebtPayoff(debts ?? [], strategy === 'custom' ? 'snowball' : strategy, extraPayment),
+    [debts, strategy, extraPayment],
   );
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
         {(['snowball', 'avalanche', 'custom'] as const).map((s) => (
-          <button key={s} type="button" className={`rounded-xl px-3 py-1 text-sm capitalize ${config?.debtStrategy === s ? 'bg-brand-600 text-white' : 'btn-secondary'}`}
+          <button key={s} type="button" className={`rounded-xl px-3 py-1 text-sm capitalize ${strategy === s ? 'bg-brand-600 text-white' : 'btn-secondary'}`}
             onClick={() => updateConfig({ debtStrategy: s })}>{s}</button>
         ))}
+      </div>
+      <div className="widget-card grid gap-3 sm:grid-cols-3">
+        <div>
+          <p className="text-xs text-slate-500">Payoff timeline</p>
+          <p className="text-2xl font-bold">{payoffPlan.months} mo</p>
+        </div>
+        <div>
+          <p className="text-xs text-slate-500">Total interest</p>
+          <p className="text-2xl font-bold">${Math.round(payoffPlan.totalInterest).toLocaleString()}</p>
+        </div>
+        <div>
+          <label className="text-xs text-slate-500">Extra monthly payment</label>
+          <input type="number" className="input mt-1" value={extraPayment} onChange={(e) => setExtraPayment(Number(e.target.value))} />
+        </div>
       </div>
       <div className="widget-card flex gap-2">
         <input className="input" placeholder="Debt name" value={name} onChange={(e) => setName(e.target.value)} />

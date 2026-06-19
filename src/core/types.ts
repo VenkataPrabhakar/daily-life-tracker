@@ -1,4 +1,7 @@
 /** Life OS — extensible field types for any module */
+export * from './platform-types';
+import type { ExtendedAppConfigFields, ModuleGroup } from './platform-types';
+export type { CalendarViewMode, LifeModeId, ModuleGroup, ReportPeriod, SearchResult } from './platform-types';
 export type FieldType =
   | 'checkbox'
   | 'number'
@@ -41,11 +44,13 @@ export type WidgetDefinition = {
   id: string;
   label: string;
   description?: string;
-  category: 'health' | 'finance' | 'productivity' | 'general';
+  category: string;
   defaultW: number;
   defaultH: number;
   minW?: number;
   minH?: number;
+  formulaId?: string;
+  userCreated?: boolean;
 };
 
 export type DashboardWidgetInstance = {
@@ -67,8 +72,9 @@ export type ModuleDefinition = {
   label: string;
   icon: string;
   path: string;
-  group: 'core' | 'finance' | 'system';
+  group: ModuleGroup;
   description?: string;
+  enabled?: boolean;
 };
 
 export type HabitFrequency = 'daily' | 'weekly' | 'monthly' | 'streak' | 'milestone';
@@ -267,7 +273,7 @@ export type AppConfig = {
   dashboards: DashboardLayout[];
   debtStrategy: 'snowball' | 'avalanche' | 'custom';
   version: number;
-};
+} & ExtendedAppConfigFields;
 
 // Legacy types preserved for backward compatibility
 export type TimeBlock = 'morning' | 'afternoon' | 'evening' | 'night';

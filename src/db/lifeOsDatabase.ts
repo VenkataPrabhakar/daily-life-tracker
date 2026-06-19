@@ -3,6 +3,7 @@ import type {
   Achievement,
   AppConfig,
   Bill,
+  CalendarEvent,
   DailyGoals,
   DailyLog,
   Debt,
@@ -11,9 +12,13 @@ import type {
   Habit,
   HabitLog,
   HealthEntry,
+  HomeItem,
   Investment,
   JournalEntry,
+  LifeDocument,
   Notification,
+  Relationship,
+  RelationshipInteraction,
   SavingsContribution,
   SavingsFund,
   Task,
@@ -21,6 +26,7 @@ import type {
   Budget,
 } from '../core/types';
 import { createDefaultConfig } from '../config/defaults';
+import { migrateConfig } from '../config/migrate';
 
 export class LifeOSDatabase extends Dexie {
   appConfig!: Table<AppConfig, string>;
@@ -42,6 +48,11 @@ export class LifeOSDatabase extends Dexie {
   tasks!: Table<Task, string>;
   notifications!: Table<Notification, string>;
   achievements!: Table<Achievement, string>;
+  relationships!: Table<Relationship, string>;
+  interactions!: Table<RelationshipInteraction, string>;
+  homeItems!: Table<HomeItem, string>;
+  documents!: Table<LifeDocument, string>;
+  calendarEvents!: Table<CalendarEvent, string>;
 
   constructor() {
     super('DailyLifeTracker');
@@ -66,6 +77,13 @@ export class LifeOSDatabase extends Dexie {
       notifications: 'id, read, createdAt',
       achievements: 'id',
     });
+    this.version(2).stores({
+      relationships: 'id, categoryId',
+      interactions: 'id, relationshipId, date',
+      homeItems: 'id, categoryId, status',
+      documents: 'id, categoryId, createdAt',
+      calendarEvents: 'id, date, type',
+    });
   }
 }
 
@@ -73,7 +91,13 @@ export const db = new LifeOSDatabase();
 
 export async function initDatabase(): Promise<AppConfig> {
   const existing = await db.appConfig.get('default');
-  if (existing) return existing;
+  if (existing) {
+    const migrated = migrateConfig(existing);
+    if (migrated.version !== existing.version || !existing.lifeModes) {
+      await db.appConfig.put(migrated);
+    }
+    return migrated;
+  }
   const config = createDefaultConfig();
   await db.appConfig.put(config);
   await db.goals.put({
@@ -89,7 +113,7 @@ export async function initDatabase(): Promise<AppConfig> {
 
 export async function getAppConfig(): Promise<AppConfig> {
   const cfg = await db.appConfig.get('default');
-  if (cfg) return cfg;
+  if (cfg) return migrateConfig(cfg);
   return initDatabase();
 }
 
@@ -102,6 +126,7 @@ export async function exportLifeOSData() {
     config, logs, goals, healthEntries, habits, habitLogs, goalItems,
     journalEntries, transactions, budgets, savingsFunds, savingsContributions,
     debts, debtPayments, investments, bills, tasks, notifications, achievements,
+    relationships, interactions, homeItems, documents, calendarEvents,
   ] = await Promise.all([
     getAppConfig(),
     db.logs.toArray(),
@@ -122,20 +147,26 @@ export async function exportLifeOSData() {
     db.tasks.toArray(),
     db.notifications.toArray(),
     db.achievements.toArray(),
+    db.relationships.toArray(),
+    db.interactions.toArray(),
+    db.homeItems.toArray(),
+    db.documents.toArray(),
+    db.calendarEvents.toArray(),
   ]);
   return {
-    version: 3 as const,
+    version: 4 as const,
     exportedAt: new Date().toISOString(),
     config,
     logs, goals, healthEntries, habits, habitLogs, goalItems,
     journalEntries, transactions, budgets, savingsFunds, savingsContributions,
     debts, debtPayments, investments, bills, tasks, notifications, achievements,
+    relationships, interactions, homeItems, documents, calendarEvents,
   };
 }
 
 export async function importLifeOSData(data: Record<string, unknown>): Promise<void> {
   await db.transaction('rw', db.tables, async () => {
-    if (data.config) await db.appConfig.put(data.config as AppConfig);
+    if (data.config) await db.appConfig.put(migrateConfig(data.config as AppConfig));
     const arrays: [Table<unknown, string>, unknown[] | undefined][] = [
       [db.logs, data.logs as unknown[]],
       [db.goals, data.goals as unknown[]],
@@ -155,6 +186,11 @@ export async function importLifeOSData(data: Record<string, unknown>): Promise<v
       [db.tasks, data.tasks as unknown[]],
       [db.notifications, data.notifications as unknown[]],
       [db.achievements, data.achievements as unknown[]],
+      [db.relationships, data.relationships as unknown[]],
+      [db.interactions, data.interactions as unknown[]],
+      [db.homeItems, data.homeItems as unknown[]],
+      [db.documents, data.documents as unknown[]],
+      [db.calendarEvents, data.calendarEvents as unknown[]],
     ];
     for (const [table, items] of arrays) {
       if (items?.length) await table.bulkPut(items);
@@ -162,8 +198,6 @@ export async function importLifeOSData(data: Record<string, unknown>): Promise<v
   });
 }
 
-// Legacy re-exports
-export { db as lifeDb };
 export async function getDailyLog(date: string): Promise<DailyLog> {
   const existing = await db.logs.get(date);
   return existing ?? { date, entries: [], updatedAt: new Date().toISOString() };

@@ -10,6 +10,8 @@ import { StatWidget } from '../components/widgets/StatWidget';
 import { formatMl, formatSleepHours, computeActivityStreak } from '../lib/aggregates';
 import { WeeklyCompletionChart } from '../components/charts/WeeklyCompletionChart';
 import { PomodoroWidget } from './PomodoroWidget';
+import { useAppConfig } from '../context/ConfigContext';
+import { computeNetWorth } from '../platform/finance/debtCalculators';
 
 type Props = { widgetId: string };
 
@@ -20,6 +22,9 @@ export function WidgetRenderer({ widgetId }: Props) {
   const debts = useLiveQuery(() => db.debts.toArray(), []);
   const goals = useLiveQuery(() => db.goalItems.toArray(), []);
   const bills = useLiveQuery(() => db.bills.toArray(), []);
+  const investments = useLiveQuery(() => db.investments.toArray(), []);
+  const relationships = useLiveQuery(() => db.relationships.toArray(), []);
+  const { config } = useAppConfig();
   const [legacyGoals, setLegacyGoals] = useState<DailyGoals | null>(null);
 
   useEffect(() => { getGoals().then(setLegacyGoals); }, []);
@@ -33,6 +38,7 @@ export function WidgetRenderer({ widgetId }: Props) {
   const content = renderWidget(widgetId, {
     dayTotals, today, legacyGoals, transactions: transactions ?? [],
     savings: savings ?? [], debts: debts ?? [], goals: goals ?? [], bills: bills ?? [],
+    investments: investments ?? [], relationships: relationships ?? [], config,
   });
   return <div className="h-full overflow-auto">{content}</div>;
 }
@@ -48,6 +54,9 @@ function renderWidget(
     debts: { name: string; balance: number; principal: number }[];
     goals: { title: string; currentValue: number; targetValue: number }[];
     bills: { name: string; dueDate: string; status: string }[];
+    investments: { quantity: number; currentPrice: number }[];
+    relationships: { name: string }[];
+    config: ReturnType<typeof useAppConfig>['config'];
   },
 ): ReactNode {
   switch (id) {
@@ -83,6 +92,19 @@ function renderWidget(
       const paid = principal ? Math.round(((principal - balance) / principal) * 100) : 0;
       return <StatWidget label="Debt Remaining" value={`$${balance.toLocaleString()}`} subValue={`${paid}% paid off`} emoji="🏦" percent={paid} />;
     }
+    case 'net-worth': {
+      const savingsTotal = ctx.savings.reduce((a, s) => a + s.currentAmount, 0);
+      const investTotal = ctx.investments.reduce((a, i) => a + i.quantity * i.currentPrice, 0);
+      const debtTotal = ctx.debts.reduce((a, d) => a + d.balance, 0);
+      const nw = computeNetWorth(savingsTotal, investTotal, debtTotal);
+      return <StatWidget label="Net Worth" value={`$${nw.toLocaleString()}`} emoji="💎" accent="violet" />;
+    }
+    case 'life-mode': {
+      const mode = ctx.config?.lifeModes.find((m) => m.id === ctx.config?.activeLifeModeId);
+      return <StatWidget label="Life Mode" value={mode?.label ?? 'Work'} subValue={mode?.description} emoji={mode?.icon ?? '💼'} />;
+    }
+    case 'relationships':
+      return <StatWidget label="Relationships" value={String(ctx.relationships.length)} subValue="contacts tracked" emoji="👥" />;
     case 'goals':
       return (
         <div className="space-y-2">
