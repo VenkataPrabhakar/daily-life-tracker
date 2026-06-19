@@ -14,6 +14,7 @@ const CATEGORY_LABELS: Record<Category, string> = {
   work: 'Work',
   sleep: 'Sleep',
   note: 'Note',
+  mood: 'Mood',
 };
 
 function entrySummary(entry: ActivityEntry): string {
@@ -30,6 +31,8 @@ function entrySummary(entry: ActivityEntry): string {
       return `${formatDuration(entry.sleep?.durationMin ?? 0)}${entry.sleep?.quality ? ` · ${entry.sleep.quality}/5` : ''}`;
     case 'note':
       return entry.note?.text ?? '';
+    case 'mood':
+      return `${entry.mood?.score ?? '?'}/5${entry.mood?.note ? ` · ${entry.mood.note}` : ''}`;
   }
 }
 

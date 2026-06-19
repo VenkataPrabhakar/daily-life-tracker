@@ -1,49 +1,37 @@
 import { useState } from 'react';
-import type { DashboardPeriod } from '../db/types';
-import { useDashboardData } from '../hooks/useDashboardData';
-import { PeriodSelector } from '../components/PeriodSelector';
-import { SummaryCard } from '../components/SummaryCard';
-import { ProgressRing } from '../components/ProgressRing';
-import {
-  ActivityHeatmap,
-  DietChart,
-  GymChart,
-  HydrationChart,
-  MonthlyBarChart,
-  SleepChart,
-  WorkChart,
-} from '../components/charts/CategoryCharts';
-import { formatDisplayDate, toDateKey } from '../lib/dates';
-import { formatDuration, formatMl, progressPercent } from '../lib/aggregates';
+import { useWellnessDashboard } from '../hooks/useWellnessDashboard';
+import { StatWidget } from '../components/widgets/StatWidget';
+import { RecoveryScoreWidget } from '../components/widgets/RecoveryScoreWidget';
+import { HabitCategoryGrid } from '../components/widgets/HabitCategoryGrid';
+import { InsightsPanel } from '../components/widgets/InsightsPanel';
+import { WeeklyCompletionChart } from '../components/charts/WeeklyCompletionChart';
+import { SleepTrendChart, MoodTrendChart } from '../components/charts/SleepTrendChart';
+import { HabitSuccessPieChart } from '../components/charts/HabitSuccessPieChart';
+import { CalendarHeatmap } from '../components/charts/CalendarHeatmap';
+import { formatMl } from '../lib/aggregates';
+import { toDateKey } from '../lib/dates';
 
 export function DashboardPage() {
-  const [period, setPeriod] = useState<DashboardPeriod>('month');
   const [anchor, setAnchor] = useState(new Date());
-  const { loading, goals, dayTotals, summary, monthlyGroups, gymStreak, consistency } =
-    useDashboardData(period, anchor);
+  const dash = useWellnessDashboard(anchor);
 
-  const todayTotals = dayTotals.at(-1);
-
-  if (loading || !summary || !goals) {
-    return <p className="text-center text-slate-500">Loading dashboard...</p>;
+  if (dash.loading || !dash.goals) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
+      </div>
+    );
   }
 
-  const avgHydration = summary.days ? Math.round(summary.hydrationMl / summary.days) : 0;
-  const avgGym = summary.days ? Math.round(summary.gymMin / summary.days) : 0;
-  const avgCalories = summary.days ? Math.round(summary.dietCalories / summary.days) : 0;
-  const avgWork = summary.days ? Math.round(summary.workMin / summary.days) : 0;
-  const avgSleep = summary.days ? Math.round(summary.sleepMin / summary.days) : 0;
+  const todayRecovery = dash.today?.recoveryScore ?? dash.avgRecovery;
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-4">
+    <div className="space-y-8 animate-fade-in">
+      <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-sm text-slate-500">
-            {period === 'day'
-              ? formatDisplayDate(toDateKey(anchor))
-              : `${summary.days} days tracked`}
-          </p>
+          <p className="text-sm font-medium text-brand-600 dark:text-brand-400">Wellness Dashboard</p>
+          <h1 className="text-3xl font-bold tracking-tight">Your daily pulse</h1>
+          <p className="mt-1 text-sm text-slate-500">WHOOP-inspired insights from your local data</p>
         </div>
         <input
           type="date"
@@ -53,76 +41,51 @@ export function DashboardPage() {
         />
       </header>
 
-      <PeriodSelector value={period} onChange={setPeriod} />
-
-      {period === 'day' && todayTotals && (
-        <div className="flex flex-wrap justify-center gap-6 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-          <ProgressRing label="Water" percent={progressPercent(todayTotals.hydrationMl, goals.hydrationMl)} />
-          <ProgressRing label="Gym" percent={progressPercent(todayTotals.gymMin, goals.gymMin)} />
-          <ProgressRing label="Diet" percent={progressPercent(todayTotals.dietCalories, goals.calories)} />
-          <ProgressRing label="Work" percent={progressPercent(todayTotals.workMin, goals.workMin)} />
-          <ProgressRing label="Sleep" percent={progressPercent(todayTotals.sleepMin, goals.sleepMin)} />
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <SummaryCard
-          label={period === 'day' ? 'Water' : 'Avg water'}
-          value={period === 'day' && todayTotals ? formatMl(todayTotals.hydrationMl) : formatMl(avgHydration)}
-          emoji="💧"
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <StatWidget label="Current Streak" value={`${dash.streak} days`} emoji="🔥" accent="amber" />
+        <StatWidget label="Weekly Completion" value={`${dash.weeklyCompletion}%`} emoji="🎯" percent={dash.weeklyCompletion} accent="brand" />
+        <StatWidget label="Avg Sleep" value={dash.avgSleepHours} emoji="😴" accent="violet" />
+        <StatWidget label="Water Intake" value={dash.avgWater} emoji="💧" accent="brand" />
+        <StatWidget label="Mood Score" value={dash.avgMood > 0 ? `${dash.avgMood}/5` : '—'} emoji="😊" accent="amber" />
+        <StatWidget
+          label="Recovery"
+          value={`${todayRecovery}%`}
+          emoji="💚"
+          percent={todayRecovery}
+          accent={todayRecovery > 80 ? 'emerald' : todayRecovery >= 60 ? 'amber' : 'rose'}
         />
-        <SummaryCard
-          label={period === 'day' ? 'Gym' : 'Avg gym'}
-          value={period === 'day' && todayTotals ? formatDuration(todayTotals.gymMin) : formatDuration(avgGym)}
-          emoji="🏋️"
-          subValue={period !== 'day' ? `${summary.gymDays} gym days` : undefined}
-        />
-        <SummaryCard
-          label={period === 'day' ? 'Diet' : 'Avg calories'}
-          value={period === 'day' && todayTotals ? `${todayTotals.dietCalories} kcal` : `${avgCalories} kcal`}
-          emoji="🍽️"
-        />
-        <SummaryCard
-          label={period === 'day' ? 'Work' : 'Avg work'}
-          value={period === 'day' && todayTotals ? formatDuration(todayTotals.workMin) : formatDuration(avgWork)}
-          emoji="💼"
-        />
-        <SummaryCard
-          label={period === 'day' ? 'Sleep' : 'Avg sleep'}
-          value={period === 'day' && todayTotals ? formatDuration(todayTotals.sleepMin) : formatDuration(avgSleep)}
-          emoji="😴"
-        />
-        {period !== 'day' && (
-          <SummaryCard label="Gym streak" value={`${gymStreak} days`} emoji="🔥" subValue="Current streak" />
-        )}
       </div>
 
-      {period !== 'day' && (
-        <div className="grid gap-3 sm:grid-cols-3">
-          <SummaryCard label="Gym consistency" value={`${consistency.gym}%`} subValue="Days with gym" />
-          <SummaryCard label="Hydration consistency" value={`${consistency.hydration}%`} subValue="Days with water logged" />
-          <SummaryCard label="Sleep consistency" value={`${consistency.sleep}%`} subValue="Days with sleep logged" />
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-1">
+          <RecoveryScoreWidget score={todayRecovery} />
         </div>
-      )}
-
-      {period === 'month' && (
-        <ActivityHeatmap data={dayTotals} metric="gymMin" />
-      )}
-
-      {period === 'year' ? (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <MonthlyBarChart data={monthlyGroups} dataKey="hydrationMl" color="#0ea5e9" title="💧 Monthly hydration" />
-          <MonthlyBarChart data={monthlyGroups} dataKey="gymMin" color="#f97316" title="🏋️ Monthly gym" />
-          <MonthlyBarChart data={monthlyGroups} dataKey="dietCalories" color="#22c55e" title="🍽️ Monthly calories" />
-          <MonthlyBarChart data={monthlyGroups} dataKey="workMin" color="#8b5cf6" title="💼 Monthly work" />
+        <div className="lg:col-span-2">
+          <InsightsPanel insights={dash.insights} />
         </div>
-      ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <HydrationChart data={dayTotals} />
-          <GymChart data={dayTotals} />
-          <DietChart data={dayTotals} />
-          <WorkChart data={dayTotals} />
-          <SleepChart data={dayTotals} />
+      </div>
+
+      <section>
+        <h2 className="mb-4 text-lg font-semibold">Habit Categories</h2>
+        <HabitCategoryGrid stats={dash.habitStats} />
+      </section>
+
+      <CalendarHeatmap data={dash.heatmap} />
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <WeeklyCompletionChart data={dash.dayTotals} />
+        <HabitSuccessPieChart stats={dash.habitStats} />
+        <SleepTrendChart data={dash.dayTotals} />
+        <MoodTrendChart data={dash.dayTotals} />
+      </div>
+
+      {dash.today && (
+        <div className="widget-card">
+          <h3 className="mb-2 text-sm font-semibold">Today at a glance</h3>
+          <p className="text-sm text-slate-500">
+            Water {formatMl(dash.today.hydrationMl)} · Recovery {dash.today.recoveryScore}% ·
+            Completion {dash.today.completionPercent}%
+          </p>
         </div>
       )}
     </div>

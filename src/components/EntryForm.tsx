@@ -26,6 +26,8 @@ export function EntryForm({ category, initial, onSubmit, onCancel }: Props) {
   const [sleepMin, setSleepMin] = useState(initial?.sleep?.durationMin ?? 480);
   const [quality, setQuality] = useState<number>(initial?.sleep?.quality ?? 3);
   const [noteText, setNoteText] = useState(initial?.note?.text ?? '');
+  const [moodScore, setMoodScore] = useState<number>(initial?.mood?.score ?? 4);
+  const [moodNote, setMoodNote] = useState(initial?.mood?.note ?? '');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +74,14 @@ export function EntryForm({ category, initial, onSubmit, onCancel }: Props) {
       case 'note':
         if (!noteText.trim()) return;
         onSubmit({ note: { text: noteText.trim() } });
+        break;
+      case 'mood':
+        onSubmit({
+          mood: {
+            score: clampNumber(moodScore, 1, 5) as 1 | 2 | 3 | 4 | 5,
+            note: moodNote.trim() || undefined,
+          },
+        });
         break;
     }
   };
@@ -169,6 +179,20 @@ export function EntryForm({ category, initial, onSubmit, onCancel }: Props) {
           <span className="text-xs text-slate-500">Note</span>
           <textarea className="input mt-1 min-h-[80px]" value={noteText} onChange={(e) => setNoteText(e.target.value)} placeholder="Anything else from today..." />
         </label>
+      )}
+
+      {category === 'mood' && (
+        <>
+          <label className="block">
+            <span className="text-xs text-slate-500">Mood score (1–5)</span>
+            <input type="range" min={1} max={5} step={1} className="mt-2 w-full" value={moodScore} onChange={(e) => setMoodScore(Number(e.target.value))} />
+            <span className="text-sm font-medium">{moodScore} / 5</span>
+          </label>
+          <label className="block">
+            <span className="text-xs text-slate-500">How are you feeling?</span>
+            <input className="input mt-1" value={moodNote} onChange={(e) => setMoodNote(e.target.value)} placeholder="Optional note" />
+          </label>
+        </>
       )}
 
       <div className="flex gap-2 pt-1">

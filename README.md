@@ -30,6 +30,13 @@ npm run preview:gh-pages
 
 Then open the URL shown (paths will use `/daily-life-tracker/` like on GitHub Pages).
 
+## Tests (free, local)
+
+```bash
+npm run test
+npm run test:coverage
+```
+
 ## Features
 
 - **Today** — Log entries by morning / afternoon / evening / night with quick-add for water and gym
