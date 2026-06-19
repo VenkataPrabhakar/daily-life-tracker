@@ -11,6 +11,7 @@ import { formatMl, formatSleepHours, computeActivityStreak } from '../lib/aggreg
 import { WeeklyCompletionChart } from '../components/charts/WeeklyCompletionChart';
 import { PomodoroWidget } from './PomodoroWidget';
 import { useAppConfig } from '../context/ConfigContext';
+import { evaluateFormula, setFormulaContext } from '../platform/formula/engine';
 import { computeNetWorth } from '../platform/finance/debtCalculators';
 
 type Props = { widgetId: string };
@@ -136,7 +137,24 @@ function renderWidget(
         </div>
       );
     }
-    default:
+    default: {
+      const def = ctx.config?.widgets.find((w) => w.id === id);
+      if (def?.formulaId && ctx.config) {
+        const formula = ctx.config.formulas.find((f) => f.id === def.formulaId);
+        if (formula) {
+          setFormulaContext({
+            completionPercent: ctx.today?.completionPercent ?? 0,
+            recoveryScore: ctx.today?.recoveryScore ?? 0,
+            savings: ctx.savings.reduce((a, s) => a + s.currentAmount, 0),
+            debts: ctx.debts.reduce((a, d) => a + d.balance, 0),
+            investments: ctx.investments.reduce((a, i) => a + i.quantity * i.currentPrice, 0),
+          });
+          const val = evaluateFormula(formula.expression);
+          return <StatWidget label={def.label} value={`${val}${formula.unit ?? ''}`} emoji="📐" />;
+        }
+      }
+      if (def?.userCreated) return <StatWidget label={def.label} value="Custom" subValue="Configure formula in Settings" emoji="🧩" />;
       return <p className="text-xs text-slate-400">Widget: {id}</p>;
+    }
   }
 }

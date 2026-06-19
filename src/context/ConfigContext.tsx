@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { AppConfig } from '../core/types';
 import { getAppConfig, initDatabase, saveAppConfig } from '../db/lifeOsDatabase';
+import { mergePluginConfig } from '../platform/plugin/registry';
 
 type ConfigContextValue = {
   config: AppConfig | null;
@@ -18,7 +19,8 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
   const refresh = async () => {
     setLoading(true);
     await initDatabase();
-    setConfig(await getAppConfig());
+    const cfg = mergePluginConfig(await getAppConfig());
+    setConfig(cfg);
     setLoading(false);
   };
 

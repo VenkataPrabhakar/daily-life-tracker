@@ -38,6 +38,7 @@ export default function App() {
         <Route path="/calendar" element={<CalendarModule />} />
         <Route path="/timeline" element={<TimelineModule />} />
         <Route path="/finance" element={<FinanceHubModule />} />
+        <Route path="/income" element={<IncomeModule />} />
         <Route path="/expenses" element={<ExpensesModule />} />
         <Route path="/debt" element={<DebtPageModule />} />
         <Route path="/savings" element={<SavingsPageModule />} />
