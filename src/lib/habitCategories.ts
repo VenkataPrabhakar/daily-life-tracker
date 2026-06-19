@@ -1,4 +1,4 @@
-import type { Category, DailyGoals, DayTotals, HabitCategory } from '../db/types';
+import type { Category, DailyGoals, DayTotals, HabitCategoryLegacy as HabitCategory } from '../db/types';
 import { HABIT_CATEGORIES } from '../db/types';
 
 /** Map activity categories to wellness habit groups. */

@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import type { DailyGoals, DailyLog } from '../db/types';
 import { computeDayTotals, formatDuration, formatMl, formatSleepHours } from './aggregates';
-import { exportAllData } from '../db/database';
+import { exportAllData as exportLegacyData } from '../db/database';
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -13,7 +13,7 @@ function downloadBlob(blob: Blob, filename: string) {
 }
 
 export async function exportJsonBackup() {
-  const data = await exportAllData();
+  const data = await exportLegacyData();
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   downloadBlob(blob, `daily-life-tracker-${new Date().toISOString().slice(0, 10)}.json`);
 }
