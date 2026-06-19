@@ -22,6 +22,6 @@ export function migrateConfig(stored: Partial<AppConfig> | undefined): AppConfig
     modules: stored.modules?.length ? stored.modules : defaults.modules,
     widgets: stored.widgets?.length ? stored.widgets : defaults.widgets,
     dashboards: stored.dashboards?.length ? stored.dashboards : defaults.dashboards,
-    version: 2,
+    version: 3,
   } as AppConfig;
 }

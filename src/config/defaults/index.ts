@@ -19,14 +19,12 @@ export const MODULES: ModuleDefinition[] = [
   { id: 'calendar', label: 'Calendar', icon: '📅', path: '/calendar', group: 'core' },
   { id: 'timeline', label: 'Timeline', icon: '🕐', path: '/timeline', group: 'core' },
   { id: 'finance', label: 'Finance', icon: '💰', path: '/finance', group: 'finance' },
+  { id: 'income', label: 'Income', icon: '💵', path: '/income', group: 'finance' },
   { id: 'expenses', label: 'Expenses', icon: '💸', path: '/expenses', group: 'finance' },
   { id: 'debt', label: 'Debt Management', icon: '🏦', path: '/debt', group: 'finance' },
   { id: 'savings', label: 'Savings', icon: '🐷', path: '/savings', group: 'finance' },
   { id: 'investments', label: 'Investments', icon: '📈', path: '/investments', group: 'finance' },
   { id: 'net-worth', label: 'Net Worth', icon: '💎', path: '/net-worth', group: 'finance' },
-  { id: 'relationships', label: 'Relationships', icon: '👥', path: '/relationships', group: 'life' },
-  { id: 'home', label: 'Home Management', icon: '🏠', path: '/home', group: 'life' },
-  { id: 'documents', label: 'Documents', icon: '📁', path: '/documents', group: 'life' },
   { id: 'analytics', label: 'Analytics', icon: '📉', path: '/analytics', group: 'system' },
   { id: 'reports', label: 'Reports', icon: '📄', path: '/reports', group: 'system' },
   { id: 'achievements', label: 'Achievements', icon: '🏆', path: '/achievements', group: 'system' },
@@ -186,7 +184,9 @@ export function createDefaultConfig(): AppConfig {
     ],
     dashboards: [DEFAULT_DASHBOARD],
     debtStrategy: 'snowball',
-    version: 2,
+    version: 3,
     ...createExtendedConfigFields(),
   };
 }
+
+export { createExtendedConfigFields };

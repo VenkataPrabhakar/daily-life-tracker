@@ -134,6 +134,22 @@ export type SearchResult = {
 
 export type ReportPeriod = 'week' | 'month' | 'year';
 
+export type UnitDefinition = {
+  id: string;
+  label: string;
+  symbol: string;
+  category: 'health' | 'finance' | 'time' | 'general';
+};
+
+export type LifeRuleDefinition = {
+  id: string;
+  label: string;
+  condition: string;
+  action: string;
+  module: string;
+  enabled: boolean;
+};
+
 export type ExtendedAppConfigFields = {
   profiles: Profile[];
   lifeModes: LifeModeDefinition[];
@@ -145,6 +161,8 @@ export type ExtendedAppConfigFields = {
   badges: BadgeDefinition[];
   charts: ChartDefinition[];
   notificationRules: NotificationRule[];
+  lifeRules: LifeRuleDefinition[];
+  units: UnitDefinition[];
   relationshipCategories: CategoryDefinition[];
   homeCategories: CategoryDefinition[];
   documentCategories: CategoryDefinition[];

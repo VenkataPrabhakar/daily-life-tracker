@@ -7,9 +7,9 @@ import { LifeModeSelector } from '../../components/LifeModeSelector';
 import { ExportPanel } from '../../components/export/ExportPanel';
 import { exportLifeOS } from '../../platform/export/unifiedExport';
 import { importLifeOSData, exportLifeOSData, clearAllData } from '../../db/database';
-import type { CategoryDefinition, FieldDefinition, ThemeMode, WidgetDefinition } from '../../core/types';
+import type { CategoryDefinition, FieldDefinition, ThemeMode, WidgetDefinition, FormulaDefinition, BadgeDefinition, NotificationRule, LifeRuleDefinition, UnitDefinition, JournalTemplate, Profile, ThemeDefinition } from '../../core/types';
 
-type ConfigSection = 'modules' | 'categories' | 'metrics' | 'widgets' | 'formulas' | 'themes' | 'badges' | 'notifications' | 'charts' | 'profiles' | 'data';
+type ConfigSection = 'modules' | 'categories' | 'metrics' | 'widgets' | 'formulas' | 'themes' | 'badges' | 'notifications' | 'rules' | 'units' | 'charts' | 'journal' | 'profiles' | 'data';
 
 function CategoryEditor({ title, items, module, onSave }: {
   title: string;
@@ -90,6 +90,160 @@ function WidgetEditor({ widgets, onSave }: { widgets: WidgetDefinition[]; onSave
   );
 }
 
+function FormulaEditor({ formulas, onSave }: { formulas: FormulaDefinition[]; onSave: (f: FormulaDefinition[]) => void }) {
+  const [label, setLabel] = useState('');
+  const [expr, setExpr] = useState('');
+  const add = () => {
+    if (!label.trim() || !expr.trim()) return;
+    onSave([...formulas, { id: `f-${Date.now()}`, label: label.trim(), expression: expr.trim(), module: 'custom' }]);
+    setLabel(''); setExpr('');
+  };
+  return (
+    <div className="widget-card space-y-3">
+      {formulas.map((f) => (
+        <div key={f.id} className="flex items-start justify-between rounded-lg bg-slate-50 p-2 text-sm dark:bg-slate-800/50">
+          <div><p className="font-medium">{f.label}</p><code className="text-xs text-slate-500">{f.expression}</code></div>
+          <button type="button" className="text-red-500" onClick={() => onSave(formulas.filter((x) => x.id !== f.id))}>×</button>
+        </div>
+      ))}
+      <div className="flex flex-wrap gap-2">
+        <input className="input text-sm" placeholder="Label" value={label} onChange={(e) => setLabel(e.target.value)} />
+        <input className="input flex-1 text-sm" placeholder="Expression (e.g. sleep + water / 100)" value={expr} onChange={(e) => setExpr(e.target.value)} />
+        <button type="button" className="btn-secondary text-sm" onClick={add}>Add</button>
+      </div>
+    </div>
+  );
+}
+
+function BadgeEditor({ badges, onSave }: { badges: BadgeDefinition[]; onSave: (b: BadgeDefinition[]) => void }) {
+  const [title, setTitle] = useState('');
+  const add = () => {
+    if (!title.trim()) return;
+    onSave([...badges, { id: `b-${Date.now()}`, title: title.trim(), description: 'Custom badge', icon: '🏅', criteriaType: 'manual', criteriaRef: 'manual', target: 1 }]);
+    setTitle('');
+  };
+  return (
+    <div className="widget-card space-y-3">
+      <div className="grid gap-3 sm:grid-cols-2">
+        {badges.map((b) => (
+          <div key={b.id} className="flex items-center justify-between rounded-lg border p-3 text-center">
+            <div><span className="text-2xl">{b.icon}</span><p className="font-semibold">{b.title}</p></div>
+            <button type="button" className="text-red-500" onClick={() => onSave(badges.filter((x) => x.id !== b.id))}>×</button>
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-2"><input className="input text-sm" placeholder="Badge title" value={title} onChange={(e) => setTitle(e.target.value)} /><button type="button" className="btn-secondary text-sm" onClick={add}>Add</button></div>
+    </div>
+  );
+}
+
+function RuleEditor({ title, items, onSave, type }: { title: string; items: NotificationRule[] | LifeRuleDefinition[]; onSave: (items: never[]) => void; type: 'notification' | 'life' }) {
+  const [label, setLabel] = useState('');
+  const add = () => {
+    if (!label.trim()) return;
+    if (type === 'notification') {
+      onSave([...items as NotificationRule[], { id: `r-${Date.now()}`, label: label.trim(), trigger: 'custom', message: label.trim(), enabled: true }] as never[]);
+    } else {
+      onSave([...items as LifeRuleDefinition[], { id: `lr-${Date.now()}`, label: label.trim(), condition: 'sleep < 360', action: 'Custom action', module: 'health', enabled: true }] as never[]);
+    }
+    setLabel('');
+  };
+  return (
+    <div className="widget-card space-y-2">
+      <h3 className="font-semibold">{title}</h3>
+      {items.map((r) => (
+        <label key={r.id} className="flex items-center gap-3 text-sm">
+          <input type="checkbox" checked={'enabled' in r ? r.enabled : false} onChange={() => onSave(items.map((x) => x.id === r.id ? { ...x, enabled: !('enabled' in x ? x.enabled : false) } : x) as never[])} />
+          <span>{r.label}</span>
+          <button type="button" className="ml-auto text-red-500" onClick={() => onSave(items.filter((x) => x.id !== r.id) as never[])}>×</button>
+        </label>
+      ))}
+      <div className="flex gap-2"><input className="input text-sm" placeholder="New rule" value={label} onChange={(e) => setLabel(e.target.value)} /><button type="button" className="btn-secondary text-sm" onClick={add}>Add</button></div>
+    </div>
+  );
+}
+
+function UnitEditor({ units, onSave }: { units: UnitDefinition[]; onSave: (u: UnitDefinition[]) => void }) {
+  const [label, setLabel] = useState('');
+  const [symbol, setSymbol] = useState('');
+  const add = () => {
+    if (!label.trim()) return;
+    onSave([...units, { id: label.toLowerCase(), label: label.trim(), symbol: symbol || label.slice(0, 3), category: 'general' }]);
+    setLabel(''); setSymbol('');
+  };
+  return (
+    <div className="widget-card space-y-2">
+      <div className="flex flex-wrap gap-1">{units.map((u) => (
+        <span key={u.id} className="flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-xs dark:bg-slate-800">{u.label} ({u.symbol})<button type="button" className="text-red-500" onClick={() => onSave(units.filter((x) => x.id !== u.id))}>×</button></span>
+      ))}</div>
+      <div className="flex gap-2"><input className="input text-sm" placeholder="Unit name" value={label} onChange={(e) => setLabel(e.target.value)} /><input className="input w-20 text-sm" placeholder="Symbol" value={symbol} onChange={(e) => setSymbol(e.target.value)} /><button type="button" className="btn-secondary text-sm" onClick={add}>Add</button></div>
+    </div>
+  );
+}
+
+function JournalTemplateEditor({ templates, onSave }: { templates: JournalTemplate[]; onSave: (t: JournalTemplate[]) => void }) {
+  const [label, setLabel] = useState('');
+  const add = () => {
+    if (!label.trim()) return;
+    onSave([...templates, { id: `j-${Date.now()}`, label: label.trim(), icon: '📝', prompts: [{ id: 'content', label: 'Write', placeholder: 'Start writing...' }] }]);
+    setLabel('');
+  };
+  return (
+    <div className="widget-card space-y-2">
+      {templates.map((t) => (
+        <div key={t.id} className="flex items-center justify-between text-sm"><span>{t.icon} {t.label}</span><button type="button" className="text-red-500" onClick={() => onSave(templates.filter((x) => x.id !== t.id))}>×</button></div>
+      ))}
+      <div className="flex gap-2"><input className="input text-sm" placeholder="Template name" value={label} onChange={(e) => setLabel(e.target.value)} /><button type="button" className="btn-secondary text-sm" onClick={add}>Add</button></div>
+    </div>
+  );
+}
+
+function ProfileEditor({ profiles, activeId, onSave, onActivate }: { profiles: Profile[]; activeId: string; onSave: (p: Profile[]) => void; onActivate: (id: string) => void }) {
+  const [name, setName] = useState('');
+  const add = () => {
+    if (!name.trim()) return;
+    onSave([...profiles, { id: crypto.randomUUID(), name: name.trim(), isDefault: false, createdAt: new Date().toISOString() }]);
+    setName('');
+  };
+  return (
+    <div className="widget-card space-y-2">
+      {profiles.map((p) => (
+        <div key={p.id} className="flex items-center justify-between text-sm">
+          <span>{p.name}{p.isDefault ? ' (default)' : ''}{activeId === p.id ? ' · active' : ''}</span>
+          <div className="flex gap-2">
+            <button type="button" className="btn-secondary text-xs" onClick={() => onActivate(p.id)}>Activate</button>
+            {!p.isDefault && <button type="button" className="text-red-500 text-xs" onClick={() => onSave(profiles.filter((x) => x.id !== p.id))}>×</button>}
+          </div>
+        </div>
+      ))}
+      <div className="flex gap-2"><input className="input text-sm" placeholder="Profile name" value={name} onChange={(e) => setName(e.target.value)} /><button type="button" className="btn-secondary text-sm" onClick={add}>Add</button></div>
+    </div>
+  );
+}
+
+function ThemeEditor({ themes, activeId, onSave, onActivate, mode, setMode, themeOptions }: {
+  themes: ThemeDefinition[]; activeId: string; onSave: (t: ThemeDefinition[]) => void; onActivate: (id: string) => void;
+  mode: ThemeMode; setMode: (m: ThemeMode) => void; themeOptions: { id: ThemeMode; label: string }[];
+}) {
+  const [label, setLabel] = useState('');
+  const add = () => {
+    if (!label.trim()) return;
+    onSave([...themes, { id: `t-${Date.now()}`, label: label.trim(), mode: 'light', brandHue: 220, accentHue: 160 }]);
+    setLabel('');
+  };
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">{themeOptions.map((opt) => (
+        <button key={opt.id} type="button" className={`rounded-xl px-4 py-2 text-sm ${mode === opt.id ? 'bg-brand-600 text-white' : 'btn-secondary'}`} onClick={() => setMode(opt.id)}>{opt.label}</button>
+      ))}</div>
+      <div className="flex flex-wrap gap-2">{themes.map((t) => (
+        <button key={t.id} type="button" className={`rounded-xl px-3 py-2 text-sm ${activeId === t.id ? 'bg-brand-600 text-white' : 'btn-secondary'}`} onClick={() => onActivate(t.id)}>{t.label}{!t.isBuiltIn && <span className="ml-1 text-red-400" onClick={(e) => { e.stopPropagation(); onSave(themes.filter((x) => x.id !== t.id)); }}>×</span>}</button>
+      ))}</div>
+      <div className="flex gap-2"><input className="input text-sm" placeholder="Custom theme name" value={label} onChange={(e) => setLabel(e.target.value)} /><button type="button" className="btn-secondary text-sm" onClick={add}>Add Theme</button></div>
+    </div>
+  );
+}
+
 export function SettingsModule() {
   const { config, updateConfig, refresh } = useAppConfig();
   const { mode, setMode } = useTheme();
@@ -107,7 +261,10 @@ export function SettingsModule() {
     { id: 'themes', label: 'Themes' },
     { id: 'badges', label: 'Badges' },
     { id: 'notifications', label: 'Notifications' },
+    { id: 'rules', label: 'Rules' },
+    { id: 'units', label: 'Units' },
     { id: 'charts', label: 'Charts' },
+    { id: 'journal', label: 'Journal' },
     { id: 'profiles', label: 'Profiles' },
     { id: 'data', label: 'Data' },
   ];
@@ -149,9 +306,9 @@ export function SettingsModule() {
         {section === 'categories' && (
           <div className="grid gap-4 lg:grid-cols-2">
             <CategoryEditor title="Expense Categories" items={config.expenseCategories} module="expenses" onSave={(items) => updateConfig({ expenseCategories: items })} />
+            <CategoryEditor title="Income Sources" items={config.incomeSources} module="income" onSave={(items) => updateConfig({ incomeSources: items })} />
             <CategoryEditor title="Habit Categories" items={config.habitCategories} module="habits" onSave={(items) => updateConfig({ habitCategories: items })} />
             <CategoryEditor title="Goal Categories" items={config.goalCategories} module="goals" onSave={(items) => updateConfig({ goalCategories: items })} />
-            <CategoryEditor title="Relationship Categories" items={config.relationshipCategories} module="relationships" onSave={(items) => updateConfig({ relationshipCategories: items })} />
           </div>
         )}
 
@@ -162,52 +319,31 @@ export function SettingsModule() {
         {section === 'widgets' && <WidgetEditor widgets={config.widgets} onSave={(w) => updateConfig({ widgets: w })} />}
 
         {section === 'formulas' && (
-          <div className="widget-card space-y-2">
-            {config.formulas.map((f) => (
-              <div key={f.id} className="rounded-lg bg-slate-50 p-2 text-sm dark:bg-slate-800/50">
-                <p className="font-medium">{f.label}</p>
-                <code className="text-xs text-slate-500">{f.expression}</code>
-              </div>
-            ))}
-          </div>
+          <FormulaEditor formulas={config.formulas} onSave={(formulas) => updateConfig({ formulas })} />
         )}
 
         {section === 'themes' && (
-          <div className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {themeOptions.map((opt) => (
-                <button key={opt.id} type="button" className={`rounded-xl px-4 py-2 text-sm ${mode === opt.id ? 'bg-brand-600 text-white' : 'btn-secondary'}`} onClick={() => setMode(opt.id)}>{opt.label}</button>
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {config.themes.map((t) => (
-                <button key={t.id} type="button" className={`rounded-xl px-3 py-2 text-sm ${config.activeThemeId === t.id ? 'bg-brand-600 text-white' : 'btn-secondary'}`} onClick={() => updateConfig({ activeThemeId: t.id })}>{t.label}</button>
-              ))}
-            </div>
-          </div>
+          <ThemeEditor themes={config.themes} activeId={config.activeThemeId} onSave={(themes) => updateConfig({ themes })} onActivate={(id) => updateConfig({ activeThemeId: id })} mode={mode} setMode={setMode} themeOptions={themeOptions} />
         )}
 
         {section === 'badges' && (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {config.badges.map((b) => (
-              <div key={b.id} className="widget-card text-center">
-                <span className="text-2xl">{b.icon}</span>
-                <p className="font-semibold">{b.title}</p>
-                <p className="text-xs text-slate-500">{b.description}</p>
-              </div>
-            ))}
-          </div>
+          <BadgeEditor badges={config.badges} onSave={(badges) => updateConfig({ badges })} />
         )}
 
         {section === 'notifications' && (
-          <div className="space-y-2">
-            {config.notificationRules.map((r) => (
-              <label key={r.id} className="widget-card flex items-center gap-3 text-sm">
-                <input type="checkbox" checked={r.enabled} onChange={() => updateConfig({ notificationRules: config.notificationRules.map((x) => x.id === r.id ? { ...x, enabled: !x.enabled } : x) })} />
-                <span>{r.label}</span>
-              </label>
-            ))}
-          </div>
+          <RuleEditor title="Notification Rules" items={config.notificationRules} onSave={(notificationRules) => updateConfig({ notificationRules })} type="notification" />
+        )}
+
+        {section === 'rules' && (
+          <RuleEditor title="Life Rules" items={config.lifeRules} onSave={(lifeRules) => updateConfig({ lifeRules })} type="life" />
+        )}
+
+        {section === 'units' && (
+          <UnitEditor units={config.units} onSave={(units) => updateConfig({ units })} />
+        )}
+
+        {section === 'journal' && (
+          <JournalTemplateEditor templates={config.journalTemplates} onSave={(journalTemplates) => updateConfig({ journalTemplates })} />
         )}
 
         {section === 'charts' && (
@@ -222,14 +358,7 @@ export function SettingsModule() {
         )}
 
         {section === 'profiles' && (
-          <div className="space-y-2">
-            {config.profiles.map((p) => (
-              <div key={p.id} className="widget-card flex items-center justify-between">
-                <span>{p.name}{p.isDefault ? ' (default)' : ''}</span>
-                <button type="button" className="btn-secondary text-xs" onClick={() => updateConfig({ activeProfileId: p.id })}>Activate</button>
-              </div>
-            ))}
-          </div>
+          <ProfileEditor profiles={config.profiles} activeId={config.activeProfileId} onSave={(profiles) => updateConfig({ profiles })} onActivate={(id) => updateConfig({ activeProfileId: id })} />
         )}
 
         {section === 'data' && (

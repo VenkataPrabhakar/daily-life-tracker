@@ -4,9 +4,11 @@ import type {
   ChartDefinition,
   FormulaDefinition,
   LifeModeDefinition,
+  LifeRuleDefinition,
   NotificationRule,
   Profile,
   ThemeDefinition,
+  UnitDefinition,
 } from '../../core/types';
 
 export const LIFE_MODES: LifeModeDefinition[] = [
@@ -60,6 +62,22 @@ export const NOTIFICATION_RULES: NotificationRule[] = [
   { id: 'budget-100', label: 'Budget exceeded', trigger: 'budget-threshold', threshold: 100, message: 'Budget exceeded', enabled: true },
 ];
 
+export const LIFE_RULES: LifeRuleDefinition[] = [
+  { id: 'sleep-workout', label: 'Low sleep → light workout', condition: 'sleep < 360', action: 'Suggest light workout instead of intense training', module: 'habits', enabled: true },
+  { id: 'stress-journal', label: 'High stress → journal', condition: 'stress >= 4', action: 'Open evening journal prompt', module: 'journal', enabled: true },
+  { id: 'budget-alert', label: 'Overspend → review', condition: 'expenses > income', action: 'Review budget categories', module: 'finance', enabled: true },
+];
+
+export const UNITS: UnitDefinition[] = [
+  { id: 'ml', label: 'Milliliters', symbol: 'ml', category: 'health' },
+  { id: 'kg', label: 'Kilograms', symbol: 'kg', category: 'health' },
+  { id: 'kcal', label: 'Calories', symbol: 'kcal', category: 'health' },
+  { id: 'g', label: 'Grams', symbol: 'g', category: 'health' },
+  { id: 'min', label: 'Minutes', symbol: 'min', category: 'time' },
+  { id: 'usd', label: 'US Dollars', symbol: '$', category: 'finance' },
+  { id: 'pct', label: 'Percent', symbol: '%', category: 'general' },
+];
+
 export const RELATIONSHIP_CATEGORIES: CategoryDefinition[] = [
   { id: 'family', label: 'Family', module: 'relationships', icon: '👨‍👩‍👧' },
   { id: 'friends', label: 'Friends', module: 'relationships', icon: '👥' },
@@ -95,6 +113,8 @@ export function createExtendedConfigFields() {
     badges: BADGES,
     charts: CHARTS,
     notificationRules: NOTIFICATION_RULES,
+    lifeRules: LIFE_RULES,
+    units: UNITS,
     relationshipCategories: RELATIONSHIP_CATEGORIES,
     homeCategories: HOME_CATEGORIES,
     documentCategories: DOCUMENT_CATEGORIES,
