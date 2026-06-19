@@ -92,6 +92,9 @@ export class LifeOSDatabase extends Dexie {
       assets: 'id, typeId',
       netWorthSnapshots: 'id, date',
     });
+    this.version(4).stores({
+      journalEntries: 'id, date, templateId, favorite',
+    });
   }
 }
 
@@ -101,7 +104,7 @@ export async function initDatabase(): Promise<AppConfig> {
   const existing = await db.appConfig.get('default');
   if (existing) {
     const migrated = migrateConfig(existing);
-    if (migrated.version !== existing.version || !existing.lifeModes || !existing.financeTags?.length) {
+    if (migrated.version !== existing.version || !existing.lifeModes || !existing.financeTags?.length || !existing.journalPrompts?.length) {
       await db.appConfig.put(migrated);
     }
     return migrated;

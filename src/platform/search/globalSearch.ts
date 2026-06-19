@@ -46,8 +46,15 @@ export async function searchAll(query: string, limit = 30): Promise<SearchResult
     if (match(q, t.title)) results.push({ id: t.id, module: 'productivity', title: t.title, date: t.dueDate, path: '/productivity' });
   }
   for (const j of journals) {
-    if (match(q, j.templateId, ...Object.values(j.responses))) {
-      results.push({ id: j.id, module: 'journal', title: `Journal ${j.date}`, date: j.date, path: '/journal' });
+    const template = config.journalTemplates.find((t) => t.id === j.templateId);
+    if (match(q, j.templateId, template?.label, ...Object.values(j.responses), ...(j.tags ?? []))) {
+      results.push({
+        id: j.id,
+        module: 'journal',
+        title: `${template?.icon ?? '📓'} ${template?.label ?? 'Journal'} · ${j.date}`,
+        date: j.date,
+        path: '/journal',
+      });
     }
   }
   for (const t of transactions) {
