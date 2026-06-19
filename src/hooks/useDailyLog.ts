@@ -58,5 +58,13 @@ export function useDailyLog(date: string) {
     [log, persist],
   );
 
-  return { log, loading, refresh, addEntry, updateEntry, deleteEntry };
+  const saveJournal = useCallback(
+    async (journal: DailyLog['journal']) => {
+      if (!log) return;
+      await persist({ ...log, journal });
+    },
+    [log, persist],
+  );
+
+  return { log, loading, refresh, addEntry, updateEntry, deleteEntry, saveJournal };
 }

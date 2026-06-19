@@ -8,19 +8,21 @@ import {
   isSameMonth,
   parseISO,
 } from 'date-fns';
-import { getAllLogs } from '../db/database';
-import type { DailyLog } from '../db/types';
+import { getAllLogs, getGoals } from '../db/database';
+import type { DailyGoals, DailyLog } from '../db/types';
 import { computeDayTotals } from '../lib/aggregates';
 import { toDateKey } from '../lib/dates';
 
 export function HistoryPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [logs, setLogs] = useState<DailyLog[]>([]);
+  const [goals, setGoals] = useState<DailyGoals | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getAllLogs().then((data) => {
+    Promise.all([getAllLogs(), getGoals()]).then(([data, goalsData]) => {
       setLogs(data);
+      setGoals(goalsData);
       setLoading(false);
     });
   }, []);
@@ -78,7 +80,7 @@ export function HistoryPage() {
             const key = toDateKey(day);
             const log = logMap.get(key);
             const hasEntries = (log?.entries.length ?? 0) > 0;
-            const totals = log ? computeDayTotals(log) : null;
+            const totals = log && goals ? computeDayTotals(log, goals) : null;
             const isToday = key === toDateKey(new Date());
 
             return (
@@ -118,7 +120,7 @@ export function HistoryPage() {
             .reverse()
             .slice(0, 10)
             .map((log) => {
-              const totals = computeDayTotals(log);
+              const totals = goals ? computeDayTotals(log, goals) : computeDayTotals(log);
               return (
                 <Link
                   key={log.date}

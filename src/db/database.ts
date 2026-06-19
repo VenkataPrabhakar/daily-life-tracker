@@ -49,7 +49,7 @@ export async function saveGoals(goals: DailyGoals): Promise<void> {
 export async function exportAllData() {
   const [logs, goals] = await Promise.all([getAllLogs(), getGoals()]);
   return {
-    version: 1 as const,
+    version: 2 as const,
     exportedAt: new Date().toISOString(),
     logs,
     goals,

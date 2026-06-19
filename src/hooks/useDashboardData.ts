@@ -34,7 +34,7 @@ export function useDashboardData(period: DashboardPeriod, anchorDate: Date) {
     const filledLogs = keys.map(
       (date) => logMap.get(date) ?? { date, entries: [], updatedAt: '' },
     );
-    const totals = computeTotalsForLogs(filledLogs);
+    const totals = computeTotalsForLogs(filledLogs, goalsData);
     const agg = aggregateTotals(totals);
 
     setGoals(goalsData);
