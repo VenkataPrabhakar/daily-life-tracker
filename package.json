@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "build:gh-pages": "tsc -b && VITE_BASE_PATH=/daily-life-tracker/ vite build",
+    "preview": "vite preview",
+    "preview:gh-pages": "VITE_BASE_PATH=/daily-life-tracker/ vite preview"
   },
   "dependencies": {
     "date-fns": "^4.1.0",
