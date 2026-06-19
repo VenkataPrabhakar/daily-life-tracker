@@ -10,9 +10,21 @@ import { ProductivityModule } from './modules/ProductivityModule';
 import { CalendarModule } from './modules/calendar/CalendarModule';
 import { RelationshipsModule, HomeModule, DocumentsModule } from './modules/life/LifeModules';
 import { SettingsModule } from './modules/settings/SettingsModule';
+import { FinanceLayout } from './modules/finance/FinanceLayout';
 import {
-  FinanceHubModule, ExpensesModule, IncomeModule,
-  SavingsPageModule, DebtPageModule, InvestmentsPageModule, NetWorthPageModule,
+  FinanceOverviewPage,
+  FinanceIncomePage,
+  FinanceExpensesPage,
+  FinanceBudgetPage,
+  FinanceCreditCardsPage,
+  FinanceLoansPage,
+  FinanceSavingsPage,
+  FinanceInvestmentsPage,
+  FinanceBillsPage,
+  FinanceAssetsPage,
+  FinanceLiabilitiesPage,
+  FinanceNetWorthPage,
+  FinanceReportsPage,
 } from './modules/finance/FinanceStandalone';
 import {
   AnalyticsModule, TimelineModule, AchievementsModule, NotificationsModule, ReportsModule,
@@ -37,28 +49,41 @@ export default function App() {
         <Route path="/journal" element={<JournalModule />} />
         <Route path="/calendar" element={<CalendarModule />} />
         <Route path="/timeline" element={<TimelineModule />} />
-        <Route path="/finance" element={<FinanceHubModule />} />
-        <Route path="/income" element={<IncomeModule />} />
-        <Route path="/expenses" element={<ExpensesModule />} />
-        <Route path="/debt" element={<DebtPageModule />} />
-        <Route path="/savings" element={<SavingsPageModule />} />
-        <Route path="/investments" element={<InvestmentsPageModule />} />
-        <Route path="/net-worth" element={<NetWorthPageModule />} />
-        <Route path="/relationships" element={<RelationshipsModule />} />
-        <Route path="/home" element={<HomeModule />} />
-        <Route path="/documents" element={<DocumentsModule />} />
+
+        <Route path="/finance" element={<FinanceLayout />}>
+          <Route index element={<FinanceOverviewPage />} />
+          <Route path="income" element={<FinanceIncomePage />} />
+          <Route path="expenses" element={<FinanceExpensesPage />} />
+          <Route path="budget" element={<FinanceBudgetPage />} />
+          <Route path="credit-cards" element={<FinanceCreditCardsPage />} />
+          <Route path="loans" element={<FinanceLoansPage />} />
+          <Route path="savings" element={<FinanceSavingsPage />} />
+          <Route path="investments" element={<FinanceInvestmentsPage />} />
+          <Route path="bills" element={<FinanceBillsPage />} />
+          <Route path="assets" element={<FinanceAssetsPage />} />
+          <Route path="liabilities" element={<FinanceLiabilitiesPage />} />
+          <Route path="net-worth" element={<FinanceNetWorthPage />} />
+          <Route path="reports" element={<FinanceReportsPage />} />
+        </Route>
+
         <Route path="/analytics" element={<AnalyticsModule />} />
         <Route path="/reports" element={<ReportsModule />} />
         <Route path="/achievements" element={<AchievementsModule />} />
         <Route path="/notifications" element={<NotificationsModule />} />
         <Route path="/settings" element={<SettingsModule />} />
-        {/* Legacy redirects */}
-        <Route path="/finance/income" element={<IncomeModule />} />
-        <Route path="/finance/expenses" element={<Navigate to="/expenses" replace />} />
-        <Route path="/finance/debt" element={<Navigate to="/debt" replace />} />
-        <Route path="/finance/savings" element={<Navigate to="/savings" replace />} />
-        <Route path="/finance/investments" element={<Navigate to="/investments" replace />} />
-        <Route path="/finance/net-worth" element={<Navigate to="/net-worth" replace />} />
+        <Route path="/relationships" element={<RelationshipsModule />} />
+        <Route path="/home" element={<HomeModule />} />
+        <Route path="/documents" element={<DocumentsModule />} />
+
+        {/* Legacy finance routes */}
+        <Route path="/income" element={<Navigate to="/finance/income" replace />} />
+        <Route path="/expenses" element={<Navigate to="/finance/expenses" replace />} />
+        <Route path="/debt" element={<Navigate to="/finance/loans" replace />} />
+        <Route path="/savings" element={<Navigate to="/finance/savings" replace />} />
+        <Route path="/investments" element={<Navigate to="/finance/investments" replace />} />
+        <Route path="/net-worth" element={<Navigate to="/finance/net-worth" replace />} />
+        <Route path="/finance/debt" element={<Navigate to="/finance/loans" replace />} />
+
         <Route path="/insights" element={<Navigate to="/analytics" replace />} />
         <Route path="/backup" element={<Navigate to="/settings" replace />} />
         <Route path="/history" element={<Navigate to="/calendar" replace />} />

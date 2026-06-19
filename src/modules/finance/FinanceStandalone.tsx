@@ -1,44 +1,77 @@
-import { ModuleShell } from '../../components/ModuleShell';
-import { FinanceOverview, TransactionModule } from './FinancePages';
-import { SavingsModule, DebtModule, InvestmentsModule, BudgetModule, NetWorthModule } from './FinanceSubModules';
+import { FinanceOverview } from './FinanceOverview';
+import { TransactionModule } from './FinancePages';
+import {
+  SavingsModule,
+  LoansModule,
+  CreditCardsModule,
+  InvestmentsModule,
+  BudgetModule,
+  BillsModule,
+  AssetsModule,
+  LiabilitiesModule,
+  NetWorthModule,
+  FinanceReportsModule,
+} from './FinanceSubModules';
 
-export function FinanceHubModule() {
-  return (
-    <ModuleShell title="Finance" subtitle="Income, expenses, budgets, and cash flow overview">
-      <FinanceOverview />
-      <div className="mt-4"><BudgetModule /></div>
-    </ModuleShell>
-  );
+export function FinanceOverviewPage() {
+  return <FinanceOverview />;
 }
 
-export function ExpensesModule() {
-  return (
-    <ModuleShell title="Expenses" subtitle="Track spending by category with charts">
-      <TransactionModule type="expense" />
-    </ModuleShell>
-  );
+export function FinanceIncomePage() {
+  return <TransactionModule type="income" />;
 }
 
-export function IncomeModule() {
-  return (
-    <ModuleShell title="Income" subtitle="Salary, freelance, dividends, and other sources">
-      <TransactionModule type="income" />
-    </ModuleShell>
-  );
+export function FinanceExpensesPage() {
+  return <TransactionModule type="expense" />;
 }
 
-export function SavingsPageModule() {
-  return <ModuleShell title="Savings" subtitle="Emergency fund, vacation, and custom savings goals"><SavingsModule /></ModuleShell>;
+export function FinanceBudgetPage() {
+  return <BudgetModule />;
 }
 
-export function DebtPageModule() {
-  return <ModuleShell title="Debt Management" subtitle="Snowball, avalanche, and payoff forecasts"><DebtModule /></ModuleShell>;
+export function FinanceCreditCardsPage() {
+  return <CreditCardsModule />;
 }
 
-export function InvestmentsPageModule() {
-  return <ModuleShell title="Investments" subtitle="Stocks, ETFs, crypto, and portfolio allocation"><InvestmentsModule /></ModuleShell>;
+export function FinanceLoansPage() {
+  return <LoansModule />;
 }
 
-export function NetWorthPageModule() {
-  return <ModuleShell title="Net Worth" subtitle="Assets minus liabilities over time"><NetWorthModule /></ModuleShell>;
+export function FinanceSavingsPage() {
+  return <SavingsModule />;
 }
+
+export function FinanceInvestmentsPage() {
+  return <InvestmentsModule />;
+}
+
+export function FinanceBillsPage() {
+  return <BillsModule />;
+}
+
+export function FinanceAssetsPage() {
+  return <AssetsModule />;
+}
+
+export function FinanceLiabilitiesPage() {
+  return <LiabilitiesModule />;
+}
+
+export function FinanceNetWorthPage() {
+  return <NetWorthModule />;
+}
+
+export function FinanceReportsPage() {
+  return <FinanceReportsModule />;
+}
+
+/** Legacy standalone wrappers — redirect routes still use these module shells elsewhere */
+export {
+  FinanceOverviewPage as FinanceHubModule,
+  FinanceExpensesPage as ExpensesModule,
+  FinanceIncomePage as IncomeModule,
+  FinanceSavingsPage as SavingsPageModule,
+  FinanceLoansPage as DebtPageModule,
+  FinanceInvestmentsPage as InvestmentsPageModule,
+  FinanceNetWorthPage as NetWorthPageModule,
+};

@@ -307,6 +307,8 @@ export function SettingsModule() {
           <div className="grid gap-4 lg:grid-cols-2">
             <CategoryEditor title="Expense Categories" items={config.expenseCategories} module="expenses" onSave={(items) => updateConfig({ expenseCategories: items })} />
             <CategoryEditor title="Income Sources" items={config.incomeSources} module="income" onSave={(items) => updateConfig({ incomeSources: items })} />
+            <CategoryEditor title="Finance Tags" items={config.financeTags.map((t) => ({ id: t.id, label: t.label, module: 'finance' }))} module="finance" onSave={(items) => updateConfig({ financeTags: items.map((i) => ({ id: i.id, label: i.label })) })} />
+            <CategoryEditor title="Asset Types" items={config.assetTypes} module="assets" onSave={(items) => updateConfig({ assetTypes: items })} />
             <CategoryEditor title="Habit Categories" items={config.habitCategories} module="habits" onSave={(items) => updateConfig({ habitCategories: items })} />
             <CategoryEditor title="Goal Categories" items={config.goalCategories} module="goals" onSave={(items) => updateConfig({ goalCategories: items })} />
           </div>
