@@ -1,19 +1,21 @@
 import { Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { TodayPage } from './pages/TodayPage';
-import { SettingsPage } from './pages/SettingsPage';
 import { DashboardModule } from './modules/DashboardModule';
 import { HealthModule } from './modules/HealthModule';
 import { HabitsModule } from './modules/HabitsModule';
 import { GoalsModule } from './modules/GoalsModule';
 import { JournalModule } from './modules/JournalModule';
 import { ProductivityModule } from './modules/ProductivityModule';
-import { FinanceLayout } from './modules/finance/FinanceLayout';
-import { FinanceOverview, TransactionModule } from './modules/finance/FinancePages';
-import { SavingsModule, DebtModule, InvestmentsModule, BudgetModule, NetWorthModule } from './modules/finance/FinanceSubModules';
+import { CalendarModule } from './modules/calendar/CalendarModule';
+import { RelationshipsModule, HomeModule, DocumentsModule } from './modules/life/LifeModules';
+import { SettingsModule } from './modules/settings/SettingsModule';
 import {
-  InsightsModule, AnalyticsModule, CalendarModule, TimelineModule,
-  AchievementsModule, NotificationsModule, ReportsModule, BackupModule,
+  FinanceHubModule, ExpensesModule, IncomeModule,
+  SavingsPageModule, DebtPageModule, InvestmentsPageModule, NetWorthPageModule,
+} from './modules/finance/FinanceStandalone';
+import {
+  AnalyticsModule, TimelineModule, AchievementsModule, NotificationsModule, ReportsModule,
 } from './modules/SystemModules';
 
 function TodayWithDateParam() {
@@ -33,27 +35,31 @@ export default function App() {
         <Route path="/goals" element={<GoalsModule />} />
         <Route path="/productivity" element={<ProductivityModule />} />
         <Route path="/journal" element={<JournalModule />} />
-        <Route path="/finance" element={<FinanceLayout />}>
-          <Route index element={<FinanceOverview />} />
-          <Route path="income" element={<TransactionModule type="income" />} />
-          <Route path="expenses" element={<TransactionModule type="expense" />} />
-          <Route path="budget" element={<BudgetModule />} />
-          <Route path="savings" element={<SavingsModule />} />
-          <Route path="debt" element={<DebtModule />} />
-          <Route path="investments" element={<InvestmentsModule />} />
-          <Route path="reports" element={<ReportsModule />} />
-          <Route path="net-worth" element={<NetWorthModule />} />
-        </Route>
         <Route path="/calendar" element={<CalendarModule />} />
         <Route path="/timeline" element={<TimelineModule />} />
+        <Route path="/finance" element={<FinanceHubModule />} />
+        <Route path="/expenses" element={<ExpensesModule />} />
+        <Route path="/debt" element={<DebtPageModule />} />
+        <Route path="/savings" element={<SavingsPageModule />} />
+        <Route path="/investments" element={<InvestmentsPageModule />} />
+        <Route path="/net-worth" element={<NetWorthPageModule />} />
+        <Route path="/relationships" element={<RelationshipsModule />} />
+        <Route path="/home" element={<HomeModule />} />
+        <Route path="/documents" element={<DocumentsModule />} />
         <Route path="/analytics" element={<AnalyticsModule />} />
+        <Route path="/reports" element={<ReportsModule />} />
         <Route path="/achievements" element={<AchievementsModule />} />
         <Route path="/notifications" element={<NotificationsModule />} />
-        <Route path="/insights" element={<InsightsModule />} />
-        <Route path="/reports" element={<ReportsModule />} />
-        <Route path="/backup" element={<BackupModule />} />
-        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/settings" element={<SettingsModule />} />
         {/* Legacy redirects */}
+        <Route path="/finance/income" element={<IncomeModule />} />
+        <Route path="/finance/expenses" element={<Navigate to="/expenses" replace />} />
+        <Route path="/finance/debt" element={<Navigate to="/debt" replace />} />
+        <Route path="/finance/savings" element={<Navigate to="/savings" replace />} />
+        <Route path="/finance/investments" element={<Navigate to="/investments" replace />} />
+        <Route path="/finance/net-worth" element={<Navigate to="/net-worth" replace />} />
+        <Route path="/insights" element={<Navigate to="/analytics" replace />} />
+        <Route path="/backup" element={<Navigate to="/settings" replace />} />
         <Route path="/history" element={<Navigate to="/calendar" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>

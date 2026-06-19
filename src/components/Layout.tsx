@@ -1,14 +1,17 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { InstallPrompt } from './InstallPrompt';
+import { GlobalSearch } from './GlobalSearch';
+import { LifeModeSelector } from './LifeModeSelector';
 import { useAppConfig } from '../context/ConfigContext';
 
 export function Layout() {
   const { config, loading } = useAppConfig();
-  const modules = config?.modules ?? [];
+  const modules = (config?.modules ?? []).filter((m) => m.enabled !== false);
 
   const groups = {
     core: modules.filter((m) => m.group === 'core'),
     finance: modules.filter((m) => m.group === 'finance'),
+    life: modules.filter((m) => m.group === 'life'),
     system: modules.filter((m) => m.group === 'system'),
   };
 
@@ -23,45 +26,57 @@ export function Layout() {
     );
   }
 
-  const NavSection = ({ title, items }: { title: string; items: typeof modules }) => (
-    <div className="mb-4">
-      <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">{title}</p>
-      <div className="flex flex-col gap-0.5">
-        {items.map((item) => (
-          <NavLink
-            key={item.id}
-            to={item.path}
-            end={item.path === '/finance'}
-            className={({ isActive }) =>
-              `flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-all ${
-                isActive
-                  ? 'bg-brand-600 text-white shadow-md shadow-brand-500/20'
-                  : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
-              }`
-            }
-          >
-            <span className="text-base">{item.icon}</span>
-            <span className="truncate">{item.label}</span>
-          </NavLink>
-        ))}
+  const NavSection = ({ title, items }: { title: string; items: typeof modules }) => {
+    if (!items.length) return null;
+    return (
+      <div className="mb-4">
+        <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">{title}</p>
+        <div className="flex flex-col gap-0.5">
+          {items.map((item) => (
+            <NavLink
+              key={item.id}
+              to={item.path}
+              end={item.path === '/finance'}
+              className={({ isActive }) =>
+                `flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-all ${
+                  isActive
+                    ? 'bg-brand-600 text-white shadow-md shadow-brand-500/20'
+                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+                }`
+              }
+            >
+              <span className="text-base">{item.icon}</span>
+              <span className="truncate">{item.label}</span>
+            </NavLink>
+          ))}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen bg-surface pb-24 md:pb-0 md:pl-64">
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col overflow-y-auto border-r border-slate-200/80 bg-white/90 p-4 backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-900/90 md:flex">
-        <div className="mb-6 flex items-center gap-2 px-2">
+        <div className="mb-4 flex items-center gap-2 px-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-lg">◉</div>
           <div>
             <h1 className="text-sm font-bold tracking-tight">Life OS</h1>
-            <p className="text-[10px] text-slate-500">Your operating system</p>
+            <p className="text-[10px] text-slate-500">Personal operating system</p>
           </div>
         </div>
+        <div className="mb-4 px-1"><GlobalSearch /></div>
         <NavSection title="Core" items={groups.core} />
         <NavSection title="Finance" items={groups.finance} />
+        <NavSection title="Life" items={groups.life} />
         <NavSection title="System" items={groups.system} />
       </aside>
+
+      <header className="sticky top-0 z-10 border-b border-slate-200/80 bg-white/80 px-4 py-2 backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-900/80 md:pl-72">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+          <LifeModeSelector compact />
+          <div className="md:hidden flex-1"><GlobalSearch /></div>
+        </div>
+      </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6 md:px-8">
         <Outlet />

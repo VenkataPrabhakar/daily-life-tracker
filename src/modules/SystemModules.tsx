@@ -1,55 +1,48 @@
 import { useEffect, useState } from 'react';
 import { useLiveQuery } from '../hooks/useLiveQuery';
-import { db, exportLifeOSData, importLifeOSData } from '../db/lifeOsDatabase';
+import { db } from '../db/lifeOsDatabase';
 import { ModuleShell } from '../components/ModuleShell';
 import { InsightsPanel } from '../components/widgets/InsightsPanel';
 import { generateInsights } from '../lib/insights';
 import { computeDayTotals, getHeatmapYearData } from '../lib/aggregates';
 import { getGoals } from '../db/database';
+import { useAppConfig } from '../context/ConfigContext';
 import type { DailyGoals } from '../core/types';
 import { CalendarHeatmap } from '../components/charts/CalendarHeatmap';
 import { WeeklyCompletionChart } from '../components/charts/WeeklyCompletionChart';
-import { exportCsv, exportPdf, exportJsonBackup } from '../lib/export';
-import { HistoryPage } from '../pages/HistoryPage';
-
-export function InsightsModule() {
-  const logs = useLiveQuery(() => db.logs.toArray(), []);
-  const [goals, setGoals] = useState<DailyGoals | null>(null);
-  useEffect(() => { getGoals().then(setGoals); }, []);
-  if (!logs || !goals) return null;
-  const dayTotals = logs.map((l) => computeDayTotals(l, goals)).sort((a, b) => a.date.localeCompare(b.date));
-  return (
-    <ModuleShell title="AI Insights" subtitle="Local, private insights from your Life OS data">
-      <InsightsPanel insights={generateInsights(dayTotals, goals)} />
-    </ModuleShell>
-  );
-}
+import { exportLifeOS } from '../platform/export/unifiedExport';
+import type { ReportPeriod } from '../core/types';
 
 export function AnalyticsModule() {
   const logs = useLiveQuery(() => db.logs.toArray(), []);
-  const dayTotals = logs ? logs.map((l) => computeDayTotals(l)).sort((a, b) => a.date.localeCompare(b.date)) : [];
+  const [goals, setGoals] = useState<DailyGoals | null>(null);
+  useEffect(() => { getGoals().then(setGoals); }, []);
+  const dayTotals = logs && goals ? logs.map((l) => computeDayTotals(l, goals)).sort((a, b) => a.date.localeCompare(b.date)) : [];
   return (
-    <ModuleShell title="Analytics" subtitle="Weekly, monthly, and yearly trends">
+    <ModuleShell title="Analytics" subtitle="Trends, heatmaps, and smart local insights">
       <div className="grid gap-4 lg:grid-cols-2">
         <WeeklyCompletionChart data={dayTotals} />
         <CalendarHeatmap data={getHeatmapYearData(dayTotals)} />
       </div>
+      {goals && dayTotals.length > 0 && (
+        <div className="mt-4">
+          <InsightsPanel insights={generateInsights(dayTotals, goals)} />
+        </div>
+      )}
     </ModuleShell>
   );
-}
-
-export function CalendarModule() {
-  return <HistoryPage />;
 }
 
 export function TimelineModule() {
   const logs = useLiveQuery(() => db.logs.toArray(), []);
   const journals = useLiveQuery(() => db.journalEntries.toArray(), []);
   const transactions = useLiveQuery(() => db.transactions.toArray(), []);
+  const relationships = useLiveQuery(() => db.interactions.toArray(), []);
   const events = [
     ...(logs?.flatMap((l) => l.entries.map((e) => ({ date: l.date, text: `${e.category} logged`, type: 'activity' }))) ?? []),
     ...(journals?.map((j) => ({ date: j.date, text: `Journal: ${j.templateId}`, type: 'journal' })) ?? []),
     ...(transactions?.map((t) => ({ date: t.date, text: `${t.type} $${t.amount}`, type: 'finance' })) ?? []),
+    ...(relationships?.map((r) => ({ date: r.date, text: `Interaction logged`, type: 'relationship' })) ?? []),
   ].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 50);
 
   return (
@@ -62,25 +55,29 @@ export function TimelineModule() {
             <p className="text-sm">{e.text}</p>
           </div>
         ))}
-        {events.length === 0 && <p className="text-sm text-slate-400">No events yet — start logging across modules</p>}
+        {events.length === 0 && <p className="text-sm text-slate-400">No events yet</p>}
       </div>
     </ModuleShell>
   );
 }
 
 export function AchievementsModule() {
+  const { config } = useAppConfig();
   const logs = useLiveQuery(() => db.logs.toArray(), []);
   const habits = useLiveQuery(() => db.habitLogs.toArray(), []);
-  const achievements = [
-    { id: '1', title: 'First Log', description: 'Log your first day', icon: '🌱', progress: logs?.length ? 1 : 0, target: 1, unlocked: (logs?.length ?? 0) >= 1 },
-    { id: '2', title: 'Week Warrior', description: '7 days of activity', icon: '🔥', progress: Math.min(logs?.length ?? 0, 7), target: 7, unlocked: (logs?.length ?? 0) >= 7 },
-    { id: '3', title: 'Habit Builder', description: 'Complete 10 habits', icon: '✅', progress: Math.min(habits?.filter((h) => h.completed).length ?? 0, 10), target: 10, unlocked: (habits?.filter((h) => h.completed).length ?? 0) >= 10 },
-  ];
+
+  const badges = config?.badges.map((b) => {
+    let progress = 0;
+    if (b.criteriaRef === 'logs') progress = logs?.length ?? 0;
+    else if (b.criteriaRef === 'habitLogs') progress = habits?.filter((h) => h.completed).length ?? 0;
+    else if (b.criteriaRef === 'activity') progress = Math.min(logs?.length ?? 0, b.target);
+    return { ...b, progress: Math.min(progress, b.target), unlocked: progress >= b.target };
+  }) ?? [];
 
   return (
-    <ModuleShell title="Achievements" subtitle="Unlock milestones as you build your Life OS">
-      <div className="grid gap-3 sm:grid-cols-3">
-        {achievements.map((a) => (
+    <ModuleShell title="Achievements" subtitle="Configurable badges and milestones">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {badges.map((a) => (
           <div key={a.id} className={`widget-card text-center ${a.unlocked ? 'border-emerald-500/40' : 'opacity-60'}`}>
             <span className="text-3xl">{a.icon}</span>
             <p className="mt-2 font-semibold">{a.title}</p>
@@ -94,10 +91,12 @@ export function AchievementsModule() {
 }
 
 export function NotificationsModule() {
+  const { config } = useAppConfig();
   const notifications = useLiveQuery(() => db.notifications.orderBy('createdAt').reverse().toArray(), []);
   const bills = useLiveQuery(() => db.bills.toArray(), []);
 
   useEffect(() => {
+    if (!config?.notificationRules) return;
     bills?.forEach(async (b) => {
       if (b.status === 'overdue' || b.status === 'upcoming') {
         const exists = await db.notifications.where('title').equals(`Bill: ${b.name}`).count();
@@ -114,10 +113,10 @@ export function NotificationsModule() {
         }
       }
     });
-  }, [bills]);
+  }, [bills, config]);
 
   return (
-    <ModuleShell title="Notifications" subtitle="Bill reminders, budget alerts, and habit nudges">
+    <ModuleShell title="Notifications" subtitle="Rule-based alerts from your config">
       <div className="space-y-2">
         {notifications?.map((n) => (
           <div key={n.id} className={`widget-card text-sm ${n.read ? 'opacity-60' : ''}`}>
@@ -133,39 +132,25 @@ export function NotificationsModule() {
 
 export function ReportsModule() {
   const logs = useLiveQuery(() => db.logs.toArray(), []);
-  return (
-    <ModuleShell title="Reports" subtitle="Generate and export Life OS reports">
-      <div className="flex flex-wrap gap-2">
-        <button type="button" className="btn-primary" onClick={() => logs && getGoals().then((g) => exportPdf(logs, g))}>Download PDF Report</button>
-        <button type="button" className="btn-secondary" onClick={() => logs && getGoals().then((g) => exportCsv(logs, g))}>Download CSV</button>
-      </div>
-    </ModuleShell>
-  );
-}
+  const [period, setPeriod] = useState<ReportPeriod>('month');
 
-export function BackupModule() {
-  const [status, setStatus] = useState('');
+  const exportReport = async (format: 'json' | 'csv' | 'excel' | 'pdf') => {
+    const goals = await getGoals();
+    await exportLifeOS(format, logs ?? [], goals, `${period}-report`);
+  };
+
   return (
-    <ModuleShell title="Backup & Restore" subtitle="Full Life OS data export and import">
+    <ModuleShell title="Reports" subtitle="Weekly, monthly, and yearly exports">
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="btn-primary" onClick={async () => {
-          const data = await exportLifeOSData();
-          const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-          const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-          a.download = `life-os-backup-${new Date().toISOString().slice(0, 10)}.json`; a.click();
-          setStatus('Backup exported');
-        }}>Export Full Backup</button>
-        <button type="button" className="btn-secondary" onClick={() => exportJsonBackup()}>Export Legacy JSON</button>
-        <label className="btn-secondary cursor-pointer">
-          Import Backup
-          <input type="file" accept=".json" className="hidden" onChange={async (e) => {
-            const file = e.target.files?.[0]; if (!file) return;
-            try { await importLifeOSData(JSON.parse(await file.text())); setStatus('Restored successfully'); }
-            catch { setStatus('Import failed'); }
-          }} />
-        </label>
+        {(['week', 'month', 'year'] as ReportPeriod[]).map((p) => (
+          <button key={p} type="button" className={`rounded-xl px-3 py-1 text-sm capitalize ${period === p ? 'bg-brand-600 text-white' : 'btn-secondary'}`} onClick={() => setPeriod(p)}>{p}</button>
+        ))}
       </div>
-      {status && <p className="text-sm text-brand-600">{status}</p>}
+      <div className="mt-4 flex flex-wrap gap-2">
+        {(['pdf', 'csv', 'excel', 'json'] as const).map((fmt) => (
+          <button key={fmt} type="button" className="btn-secondary text-sm" onClick={() => exportReport(fmt)}>Export {fmt.toUpperCase()}</button>
+        ))}
+      </div>
     </ModuleShell>
   );
 }
