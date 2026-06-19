@@ -37,7 +37,45 @@ export type JournalTemplate = {
   id: string;
   label: string;
   icon: string;
-  prompts: { id: string; label: string; placeholder?: string }[];
+  description?: string;
+  category?: 'daily' | 'reflection' | 'activity' | 'free';
+  prompts: { id: string; label: string; placeholder?: string; hint?: string }[];
+  userCreated?: boolean;
+};
+
+export type JournalPromptCategory =
+  | 'self-reflection'
+  | 'career'
+  | 'finance'
+  | 'health'
+  | 'relationships'
+  | 'gratitude'
+  | 'productivity';
+
+export type JournalPrompt = {
+  id: string;
+  text: string;
+  category: JournalPromptCategory;
+};
+
+export type JournalReminderFrequency = 'daily' | 'weekly' | 'monthly';
+
+export type JournalReminder = {
+  id: string;
+  templateId: string;
+  frequency: JournalReminderFrequency;
+  time: string;
+  dayOfWeek?: number;
+  dayOfMonth?: number;
+  enabled: boolean;
+};
+
+export type JournalAttachment = {
+  id: string;
+  type: 'image' | 'audio';
+  name: string;
+  dataUrl: string;
+  createdAt: string;
 };
 
 export type WidgetDefinition = {
@@ -136,9 +174,19 @@ export type HealthEntry = {
 export type JournalEntry = {
   id: string;
   date: string;
+  time?: string;
   templateId: string;
   responses: Record<string, string>;
   createdAt: string;
+  updatedAt?: string;
+  mood?: number;
+  energy?: number;
+  stress?: number;
+  weather?: string;
+  tags?: string[];
+  favorite?: boolean;
+  attachments?: JournalAttachment[];
+  libraryPromptIds?: string[];
 };
 
 export type TransactionType = 'income' | 'expense';
@@ -302,6 +350,8 @@ export type AppConfig = {
   debtTypes: CategoryDefinition[];
   investmentTypes: CategoryDefinition[];
   journalTemplates: JournalTemplate[];
+  journalPrompts: JournalPrompt[];
+  journalReminders: JournalReminder[];
   habitCategories: CategoryDefinition[];
   goalCategories: CategoryDefinition[];
   taskCategories: CategoryDefinition[];

@@ -185,7 +185,7 @@ function JournalTemplateEditor({ templates, onSave }: { templates: JournalTempla
   const [label, setLabel] = useState('');
   const add = () => {
     if (!label.trim()) return;
-    onSave([...templates, { id: `j-${Date.now()}`, label: label.trim(), icon: '📝', prompts: [{ id: 'content', label: 'Write', placeholder: 'Start writing...' }] }]);
+    onSave([...templates, { id: `j-${Date.now()}`, label: label.trim(), icon: '📝', userCreated: true, prompts: [{ id: 'content', label: 'Write', placeholder: 'Start writing...' }] }]);
     setLabel('');
   };
   return (

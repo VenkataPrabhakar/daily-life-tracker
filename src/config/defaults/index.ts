@@ -3,7 +3,6 @@ import type {
   CategoryDefinition,
   DashboardLayout,
   FieldDefinition,
-  JournalTemplate,
   ModuleDefinition,
   WidgetDefinition,
 } from '../../core/types';
@@ -14,6 +13,11 @@ import {
   FINANCE_TAGS,
   ASSET_TYPES,
 } from './financeCategories';
+import {
+  JOURNAL_TEMPLATES,
+  JOURNAL_PROMPTS,
+  DEFAULT_JOURNAL_REMINDERS,
+} from './journalDefaults';
 
 export const MODULES: ModuleDefinition[] = [
   { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dashboard', group: 'core' },
@@ -88,37 +92,7 @@ export const INVESTMENT_TYPES: CategoryDefinition[] = [
   'stocks', 'etfs', 'mutual-funds', 'crypto', 'bonds', 'gold', 'real-estate', 'retirement', 'custom',
 ].map((id) => ({ id, label: id.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join(' '), module: 'investments' }));
 
-export const JOURNAL_TEMPLATES: JournalTemplate[] = [
-  { id: 'morning', label: 'Morning Journal', icon: '🌅', prompts: [
-    { id: 'intention', label: "Today's Intention", placeholder: 'What matters most today?' },
-    { id: 'gratitude', label: 'Gratitude', placeholder: 'Three things you appreciate' },
-  ]},
-  { id: 'night', label: 'Evening Journal', icon: '🌙', prompts: [
-    { id: 'wins', label: 'Wins', placeholder: 'What went well?' },
-    { id: 'challenges', label: 'Challenges', placeholder: 'What was difficult?' },
-    { id: 'tomorrow', label: "Tomorrow's Focus", placeholder: 'One priority for tomorrow' },
-  ]},
-  { id: 'gratitude', label: 'Gratitude Journal', icon: '🙏', prompts: [
-    { id: 'grateful1', label: 'Grateful for...' },
-    { id: 'grateful2', label: 'Another...' },
-    { id: 'grateful3', label: 'And another...' },
-  ]},
-  { id: 'workout', label: 'Workout Journal', icon: '🏋️', prompts: [
-    { id: 'activity', label: 'Activity' }, { id: 'duration', label: 'Duration' }, { id: 'notes', label: 'Notes' },
-  ]},
-  { id: 'food', label: 'Food Journal', icon: '🍽️', prompts: [
-    { id: 'meals', label: 'Meals' }, { id: 'calories', label: 'Calories' }, { id: 'notes', label: 'Notes' },
-  ]},
-  { id: 'travel', label: 'Travel Journal', icon: '✈️', prompts: [
-    { id: 'location', label: 'Location' }, { id: 'highlights', label: 'Highlights' },
-  ]},
-  { id: 'dream', label: 'Dream Journal', icon: '💭', prompts: [
-    { id: 'dream', label: 'Dream', placeholder: 'Describe your dream...' },
-  ]},
-  { id: 'freeform', label: 'Freeform Journal', icon: '📝', prompts: [
-    { id: 'content', label: 'Write freely', placeholder: 'Start writing...' },
-  ]},
-];
+export { JOURNAL_TEMPLATES } from './journalDefaults';
 
 export const DEFAULT_DASHBOARD: DashboardLayout = {
   id: 'main',
@@ -147,6 +121,8 @@ export function createDefaultConfig(): AppConfig {
     debtTypes: DEBT_TYPES,
     investmentTypes: INVESTMENT_TYPES,
     journalTemplates: JOURNAL_TEMPLATES,
+    journalPrompts: JOURNAL_PROMPTS,
+    journalReminders: DEFAULT_JOURNAL_REMINDERS,
     habitCategories: [
       { id: 'fitness', label: 'Fitness', module: 'habits', icon: '🏋️' },
       { id: 'nutrition', label: 'Nutrition', module: 'habits', icon: '🍽️' },
@@ -176,7 +152,7 @@ export function createDefaultConfig(): AppConfig {
     budgetMode: 'custom',
     dashboards: [DEFAULT_DASHBOARD],
     debtStrategy: 'snowball',
-    version: 4,
+    version: 5,
     ...createExtendedConfigFields(),
   };
 }

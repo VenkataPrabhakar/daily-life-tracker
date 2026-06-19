@@ -1,7 +1,20 @@
-import type { AppConfig, CategoryDefinition, ModuleDefinition } from '../core/types';
+import type { AppConfig, CategoryDefinition, JournalTemplate, ModuleDefinition } from '../core/types';
 import { createDefaultConfig } from './defaults/index';
 import { createExtendedConfigFields } from './defaults/extensions';
 import { buildExpenseCategories, FINANCE_TAGS, ASSET_TYPES } from './defaults/financeCategories';
+import { JOURNAL_TEMPLATES, JOURNAL_PROMPTS, DEFAULT_JOURNAL_REMINDERS } from './defaults/journalDefaults';
+
+function mergeJournalTemplates(stored: JournalTemplate[], defaults: JournalTemplate[]): JournalTemplate[] {
+  const byId = new Map(stored.map((t) => [t.id, t]));
+  for (const t of defaults) {
+    if (!byId.has(t.id)) byId.set(t.id, t);
+    else {
+      const existing = byId.get(t.id)!;
+      byId.set(t.id, { ...t, ...existing, prompts: existing.userCreated ? existing.prompts : t.prompts });
+    }
+  }
+  return [...byId.values()];
+}
 
 function mergeCategories(stored: CategoryDefinition[], defaults: CategoryDefinition[]): CategoryDefinition[] {
   const ids = new Set(stored.map((c) => c.id));
@@ -41,6 +54,9 @@ export function migrateConfig(stored: Partial<AppConfig> | undefined): AppConfig
     financeTags: stored.financeTags?.length ? stored.financeTags : FINANCE_TAGS,
     assetTypes: stored.assetTypes?.length ? stored.assetTypes : ASSET_TYPES,
     budgetMode: stored.budgetMode ?? defaults.budgetMode,
-    version: 4,
+    journalTemplates: mergeJournalTemplates(stored.journalTemplates ?? [], JOURNAL_TEMPLATES),
+    journalPrompts: stored.journalPrompts?.length ? stored.journalPrompts : JOURNAL_PROMPTS,
+    journalReminders: stored.journalReminders?.length ? stored.journalReminders : DEFAULT_JOURNAL_REMINDERS,
+    version: 5,
   } as AppConfig;
 }
